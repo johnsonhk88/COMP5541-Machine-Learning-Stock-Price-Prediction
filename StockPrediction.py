@@ -65,7 +65,17 @@ rawStock7 = pd.read_csv(RawStock7, index_col="Date", parse_dates=True)
 rawStock8 = pd.read_csv(RawStock8, index_col="Date", parse_dates=True) 
 
 
-# 
+preTrainStock1 = pd.read_csv(PreTrainStock1) 
+preTrainStock2 = pd.read_csv(PreTrainStock2) 
+preTrainStock3 = pd.read_csv(PreTrainStock3) 
+preTrainStock4 = pd.read_csv(PreTrainStock4)
+preTrainStock5 = pd.read_csv(PreTrainStock5) 
+preTrainStock6 = pd.read_csv(PreTrainStock6) 
+preTrainStock7 = pd.read_csv(PreTrainStock7) 
+preTrainStock8 = pd.read_csv(PreTrainStock8)  
+
+
+# create RowStock Dictionary 
 RawStockList = {}
 
 RawStockList['rawStock1'] = rawStock1
@@ -78,6 +88,17 @@ RawStockList['rawStock7'] = rawStock7
 RawStockList['rawStock8'] = rawStock8
 
 
+# create preTrainStock Dictionary 
+PreTrainStockList = {}
+
+PreTrainStockList['preTrainStock1'] = preTrainStock1
+PreTrainStockList['preTrainStock2'] = preTrainStock2
+PreTrainStockList['preTrainStock3'] = preTrainStock3
+PreTrainStockList['preTrainStock4'] = preTrainStock4
+PreTrainStockList['preTrainStock5'] = preTrainStock5
+PreTrainStockList['preTrainStock6'] = preTrainStock6
+PreTrainStockList['preTrainStock7'] = preTrainStock7
+PreTrainStockList['preTrainStock8'] = preTrainStock8
 
 def showStockInfo(Stock):
     Stock.info()
@@ -153,6 +174,8 @@ def plotDailyChange(Stock , name):
 showAllStockInfo(RawStockList)
 showAllStockData(RawStockList)
 
+
+
 for stockTempKey, stockTempValue in RawStockList.items(): 
     print("\n\rCalculate MA for Stock :", stockTempKey)
     calculateMA(stockTempValue)
@@ -173,6 +196,8 @@ for stockTempKey, stockTempValue in RawStockList.items():
     plotDailyChange(stockTempValue, stockTempKey)
 
 
+showAllStockInfo(PreTrainStockList)
+showAllStockData(PreTrainStockList)
 
 
 class LSTMModel(nn.Module):
