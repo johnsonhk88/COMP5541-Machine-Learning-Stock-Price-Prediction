@@ -64,452 +64,114 @@ rawStock6 = pd.read_csv(RawStock6, index_col="Date", parse_dates=True)
 rawStock7 = pd.read_csv(RawStock7, index_col="Date", parse_dates=True) 
 rawStock8 = pd.read_csv(RawStock8, index_col="Date", parse_dates=True) 
 
-RawStockList = [] 
-RawStockList.append(rawStock1, rawStock2, rawStock3, rawStock4, rawStock5, rawStock6, rawStock7, rawStock8)
 
-def showStockInfo(RawStockList, index):
-    RawStockList[index].info()
+# 
+RawStockList = {}
 
-def showStockData(RawStockList, index):
-    RawStockList[index].head()
-    RawStockList[index].describe()
+RawStockList['rawStock1'] = rawStock1
+RawStockList['rawStock2'] = rawStock2
+RawStockList['rawStock3'] = rawStock3
+RawStockList['rawStock4'] = rawStock4
+RawStockList['rawStock5'] = rawStock5
+RawStockList['rawStock6'] = rawStock6
+RawStockList['rawStock7'] = rawStock7
+RawStockList['rawStock8'] = rawStock8
 
 
-def calculateMA(RawStockList, index):
+
+def showStockInfo(Stock):
+    Stock.info()
+
+
+def showStockData(Stock):
+    print(Stock.head())
+    print(Stock.describe())
+
+
+def calculateMA(Stock):
     for ma in maDay:
         columnName = "MA for %s  days" %(str(ma))
-        MaResult=RawStockList[index]['Adj Close'].rolling(ma).mean()
+        MaResult=Stock['Adj Close'].rolling(ma).mean()
         print(columnName, MaResult)
-        RawStockList[index].insert(6, columnName, RawStockList[index]['Adj Close'].rolling(ma).mean(), True )
+        Stock.insert(6, columnName, Stock['Adj Close'].rolling(ma).mean(), True )
 
-def calculateDailyChange(RawStockList, index):
-    RawStockList[index].insert(11, 'Daily Return', RawStockList[index]['Adj Close'].pct_change(), True )
-
-
-
-
-
-#output Raw Stock1 data 
-rawStock1.head()
-rawStock1.describe()
-rawStock2.describe()
-rawStock2.head()
-rawStock3.describe()
-rawStock3.head() 
-rawStock4.describe()
-rawStock4.head() 
-rawStock5.describe()
-rawStock5.head() 
-rawStock6.describe()
-rawStock6.head() 
-rawStock7.describe()
-rawStock7.head() 
-rawStock8.describe()
-rawStock8.head()
-
-
-#calucalte  stock Moving average price
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock1['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock1.insert(6, columnName, rawStock1['Adj Close'].rolling(ma).mean(), True )
-    
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock2['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock2.insert(6, columnName, rawStock2['Adj Close'].rolling(ma).mean(), True )
-
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock3['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock3.insert(6, columnName, rawStock3['Adj Close'].rolling(ma).mean(), True )
-    
-    
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock4['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock4.insert(6, columnName, rawStock4['Adj Close'].rolling(ma).mean(), True )
-    
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock5['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock5.insert(6, columnName, rawStock5['Adj Close'].rolling(ma).mean(), True )
-    
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock6['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock6.insert(6, columnName, rawStock6['Adj Close'].rolling(ma).mean(), True )
-    
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock7['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock7.insert(6, columnName, rawStock7['Adj Close'].rolling(ma).mean(), True )
+def calculateDailyChange(Stock):
+    Stock.insert(11, 'Daily Return', Stock['Adj Close'].pct_change(), True )
     
 
-for ma in maDay:
-    columnName = "MA for %s  days" %(str(ma))
-    MaResult=rawStock8['Adj Close'].rolling(ma).mean()
-    print(columnName, MaResult)
-    rawStock8.insert(6, columnName, rawStock8['Adj Close'].rolling(ma).mean(), True )
+# First calculate the mid prices from the highest and lowest
+def CalculateNorm(Stock):
+    high_prices = Stock.loc[:,'High'].to_numpy()
+    low_prices = Stock.loc[:,'Low'].to_numpy()
+    mid_prices = (high_prices+low_prices)/2.0
+
+    return high_prices, low_prices,  mid_prices
+
+def showAllStockInfo(StockList):
+    for stockTempKey, stockTempValue in StockList.items():
+        print("\n\rShow Stock New Info :", stockTempKey)
+        showStockInfo(stockTempValue)
+
+def showAllStockData(StockList):
+    for stockTempKey, stockTempValue in StockList.items():
+        print("\n\rShow Stock New Info :", stockTempKey)
+        showStockData(stockTempValue)
 
 
-#output raw Stock info data 
-rawStock1.info 
-rawStock2.info 
-rawStock3.info 
-rawStock4.info 
-rawStock5.info 
-rawStock6.info 
-rawStock7.info
-rawStock8.info
-
-# We'll use pct_change to find the percent change for each day
-rawStock1.insert(11, 'Daily Return', rawStock1['Adj Close'].pct_change(), True )
-rawStock2.insert(11, 'Daily Return', rawStock2['Adj Close'].pct_change(), True )
-rawStock3.insert(11, 'Daily Return', rawStock3['Adj Close'].pct_change(), True )
-rawStock4.insert(11, 'Daily Return', rawStock4['Adj Close'].pct_change(), True )
-rawStock5.insert(11, 'Daily Return', rawStock5['Adj Close'].pct_change(), True )
-rawStock6.insert(11, 'Daily Return', rawStock6['Adj Close'].pct_change(), True )
-rawStock7.insert(11, 'Daily Return', rawStock7['Adj Close'].pct_change(), True )
-rawStock8.insert(11, 'Daily Return', rawStock8['Adj Close'].pct_change(), True )
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Low']+rawStock1['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Adj Close']), label='Adj')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Open']), label='Open')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Close']), label='Close')
-plt.xticks(range(0,rawStock1.shape[0],50),rawStock1.index[::50], rotation=60)
-plt.title('Stock1: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Volume']), label='Volume')
-plt.xticks(range(0,rawStock1.shape[0],50),rawStock1.index[::50], rotation=60)
-plt.title('Stock1: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Low']+rawStock1['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['Adj Close']), label='Adj')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock1.shape[0]),(rawStock1['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock1.shape[0],100),rawStock1.index[::100], rotation=60)
-plt.title('Stock1: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock1['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Low']+rawStock2['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Adj Close']), label='Adj')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Open']), label='Open')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Close']), label='Close')
-plt.xticks(range(0,rawStock2.shape[0],100),rawStock2.index[::100], rotation=60)
-plt.title('Stock2: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Volume']), label='Volume')
-plt.xticks(range(0,rawStock2.shape[0],50),rawStock2.index[::50], rotation=60)
-plt.title('Stock2: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Low']+rawStock2['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['Adj Close']), label='Adj')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock2.shape[0]),(rawStock2['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock2.shape[0],100),rawStock2.index[::100], rotation=60)
-plt.title('Stock2: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock2['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Low']+rawStock3['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Adj Close']), label='Adj')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Open']), label='Open')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Close']), label='Close')
-plt.xticks(range(0,rawStock3.shape[0],50),rawStock3.index[::50], rotation=60)
-plt.title('Stock3: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Volume']), label='Volume')
-plt.xticks(range(0,rawStock3.shape[0],50),rawStock3.index[::50], rotation=60)
-plt.title('Stock3: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Low']+rawStock3['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['Adj Close']), label='Adj')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock3.shape[0]),(rawStock3['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock3.shape[0],100),rawStock3.index[::100], rotation=60)
-plt.title('Stock3: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock3['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Low']+rawStock4['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Adj Close']), label='Adj')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Open']), label='Open')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Close']), label='Close')
-plt.xticks(range(0,rawStock4.shape[0],50),rawStock4.index[::50], rotation=60)
-plt.title('Stock4: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Volume']), label='Volume')
-plt.xticks(range(0,rawStock4.shape[0],50),rawStock4.index[::50], rotation=60)
-plt.title('Stock4: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Low']+rawStock4['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['Adj Close']), label='Adj')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock4.shape[0]),(rawStock4['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock4.shape[0],100),rawStock4.index[::100], rotation=60)
-plt.title('Stock4: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock4['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Low']+rawStock5['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Adj Close']), label='Adj')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Open']), label='Open')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Close']), label='Close')
-plt.xticks(range(0,rawStock5.shape[0],50),rawStock5.index[::50], rotation=60)
-plt.title('Stock5: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Volume']), label='Volume')
-plt.xticks(range(0,rawStock5.shape[0],50),rawStock5.index[::50], rotation=60)
-plt.title('Stock5: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Low']+rawStock5['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['Adj Close']), label='Adj')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock5.shape[0]),(rawStock5['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock5.shape[0],100),rawStock5.index[::100], rotation=60)
-plt.title('Stock5: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock5['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock6.shape[0]),(rawStock6['Low']+rawStock6['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock6.shape[0]),(rawStock6['Adj Close']), label='Adj')
-plt.plot(range(rawStock6.shape[0]),(rawStock6['Open']), label='Open')
-plt.plot(range(rawStock6.shape[0]),(rawStock6['Close']), label='Close')
-plt.xticks(range(0,rawStock6.shape[0],50),rawStock6.index[::50], rotation=60)
-plt.title('Stock6: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Low']+rawStock7['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Adj Close']), label='Adj')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Open']), label='Open')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Close']), label='Close')
-plt.xticks(range(0,rawStock7.shape[0],50),rawStock7.index[::50], rotation=45)
-plt.title('Stock7: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Volume']), label='Volume')
-plt.xticks(range(0,rawStock7.shape[0],50),rawStock7.index[::50], rotation=60)
-plt.title('Stock7: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Low']+rawStock7['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['Adj Close']), label='Adj')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock7.shape[0]),(rawStock7['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock7.shape[0],100),rawStock7.index[::100], rotation=60)
-plt.title('Stock5: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock3['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-
-# Plot data
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Low']+rawStock8['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Adj Close']), label='Adj')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Open']), label='Open')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Close']), label='Close')
-plt.xticks(range(0,rawStock8.shape[0],50),rawStock8.index[::50], rotation=45)
-plt.title('Stock8: Price')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 10))
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Volume']), label='Volume')
-plt.xticks(range(0,rawStock8.shape[0],50),rawStock8.index[::50], rotation=60)
-plt.title('Stock8: Volume History')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Volume',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-plt.figure(figsize= (20, 12))
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Low']+rawStock8['High'])/2.0, label='Average Price')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['Adj Close']), label='Adj')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['MA for 200  days']), label='MA for 200  days')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['MA for 50  days']), label='MA for 50  days')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['MA for 20  days']), label='MA for 20  days')
-plt.plot(range(rawStock8.shape[0]),(rawStock8['MA for 10  days']), label='MA for 10  days')
-plt.xticks(range(0,rawStock8.shape[0],100),rawStock8.index[::100], rotation=60)
-plt.title('Stock8: Moving  Analysis')
-plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
-plt.legend(loc='best')
-plt.show()
-
-# Then we'll plot the daily return percentage
-rawStock8['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
-
-
-def plotPrice(RawStockList, index):
+def plotPrice(Stock , name):
     plt.figure(figsize= (20, 10))
-    plt.plot(range(RawStockList[index].shape[0]),(RawStockList[index]['Low']+RawStockList[index]['High'])/2.0, label='Average Price')
-    plt.plot(range(RawStockList[index]),(RawStockList[index]['Adj Close']), label='Adj')
-    plt.plot(range(RawStockList[index]),(RawStockList[index]['Open']), label='Open')
-    plt.plot(range(RawStockList[index]),(RawStockList[index]['Close']), label='Close')
-    plt.xticks(range(0,RawStockList[index].shape[0],50),RawStockList[index].index[::50], rotation=45)
-    plt.title('Stock %d : Price' %index)
+    plt.plot(range(Stock.shape[0]),(Stock['Low']+Stock['High'])/2.0, label='Average Price')
+    plt.plot(range(Stock.shape[0]),(Stock['Adj Close']), label='Adj')
+    plt.plot(range(Stock.shape[0]),(Stock['Open']), label='Open')
+    plt.plot(range(Stock.shape[0]),(Stock['Close']), label='Close')
+    plt.xticks(range(0,Stock.shape[0],50),Stock.index[::50], rotation=45)
+    plt.title('Stock %s : Price' %name)
     plt.xlabel('Date',fontsize=18)
     plt.ylabel('Mid Price',fontsize=18)
     plt.legend(loc='best')
     plt.show()
     
-def plotVolume(RawStockList, index):
+def plotVolume(Stock , name):
     plt.figure(figsize= (20, 10))
-    plt.plot(range(RawStockList[index].shape[0]),(RawStockList[index]['Volume']), label='Volume')
-    plt.xticks(range(0,RawStockList[index].shape[0],50),RawStockList[index].index[::50], rotation=60)
-    plt.title('Stock %d : Volume History' %index)
+    plt.plot(range(Stock.shape[0]),(Stock['Volume']), label='Volume')
+    plt.xticks(range(0,Stock.shape[0],50),Stock.index[::50], rotation=60)
+    plt.title('Stock %s : Volume History' %name)
     plt.xlabel('Date',fontsize=18)
     plt.ylabel('Volume',fontsize=18)
     plt.legend(loc='best')
     plt.show()
     
 
-def plotDailyChange(RawStockList, index):
+def plotDailyChange(Stock , name):
     # Then we'll plot the daily return percentage
-    RawStockList[index]['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
+    plt.title('Stock %s : Dialy Change' %name)
+    Stock['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
     plt.show()
 
 
-for index in range(0, len(RawStockList)):
-    plotPrice(RawStockList, index)
-    plotVolume(RawStockList, index)
-    plotDailyChange(RawStockList, index)
+
+showAllStockInfo(RawStockList)
+showAllStockData(RawStockList)
+
+for stockTempKey, stockTempValue in RawStockList.items(): 
+    print("\n\rCalculate MA for Stock :", stockTempKey)
+    calculateMA(stockTempValue)
+    print("\n\rCalculate Daily Change for Stock :", stockTempKey)
+    calculateDailyChange(stockTempValue)
+    print("\n\rCalculate High/Low/Average Price :", stockTempKey)
+    trainHigPrices , trainLowPrice,  trainMidPrice = CalculateNorm(stockTempValue)
+    print("High Data Size :", len(trainHigPrices))
+    print("Low Data Size :", len(trainLowPrice))
+    print("Average Data Size :", len(trainMidPrice))
+
+showAllStockInfo(RawStockList)
+
+for stockTempKey, stockTempValue in RawStockList.items():
+    print("\n\rPlot Price :", stockTempKey)
+    plotPrice(stockTempValue, stockTempKey)
+    plotVolume(stockTempValue, stockTempKey)
+    plotDailyChange(stockTempValue, stockTempKey)
+
 
 
 
@@ -557,16 +219,13 @@ class LSTMModel(nn.Module):
         # out.size() --> 100, 10
         return out
 
-# First calculate the mid prices from the highest and lowest
-def CalculateNorm(RawStockList, index):
-    high_prices = RawStockList[index].loc[:,'High'].as_matrix()
-    low_prices = RawStockList[index].loc[:,'Low'].as_matrix()
-    mid_prices = (high_prices+low_prices)/2.0
-
-    return high_prices, low_prices,  mid_prices
 
 
-trainHigPrices , trainLowPrice,  trainMidPrice = CalculateNorm(RawStockList, 0)
 
+
+
+
+'''
 train_data = trainMidPrice[:300]
 test_data = trainMidPrice[300:]
+'''
