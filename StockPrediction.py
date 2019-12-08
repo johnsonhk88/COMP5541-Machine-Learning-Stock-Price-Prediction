@@ -145,6 +145,13 @@ def CalculateNorm(Stock):
 
     return high_prices, low_prices,  mid_prices
 
+def augFeatures(Stock):
+    Stock["year"] = pd.DatetimeIndex(Stock.iloc[:,0]).year
+    Stock["month"] = pd.DatetimeIndex(Stock.iloc[:,0]).month
+    Stock["date"] = pd.DatetimeIndex(Stock.iloc[:,0]).day
+    Stock["day"] =  pd.DatetimeIndex(Stock.iloc[:,0]).dayofweek
+
+
 def showAllStockInfo(StockList):
     for stockTempKey, stockTempValue in StockList.items():
         print("\n\rShow Stock New Info :", stockTempKey)
@@ -226,6 +233,13 @@ for stockTempKey, stockTempValue in RawStockList.items():
 showAllStockInfo(PreTrainStockList)
 showAllStockHead(PreTrainStockList)
 showAllStockTail(PreTrainStockList)
+
+print("print Raw Stock1 :", RawStockList['rawStock1'])
+print("print Raw Stock1 index column:", RawStockList['rawStock1'].iloc[:,0])
+
+augFeatures(RawStockList['rawStock1'])
+showStockInfo(RawStockList['rawStock1'])
+
 
 
 class LSTMModel(nn.Module):
