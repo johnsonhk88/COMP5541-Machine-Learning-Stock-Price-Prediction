@@ -72,9 +72,7 @@ preTrainStock4 = pd.read_csv(PreTrainStock4)
 preTrainStock5 = pd.read_csv(PreTrainStock5) 
 preTrainStock6 = pd.read_csv(PreTrainStock6) 
 preTrainStock7 = pd.read_csv(PreTrainStock7) 
-preTrainStock8 = pd.read_csv(PreTrainStock8)  
-
-
+preTrainStock8 = pd.read_csv(PreTrainStock8) 
 # create RowStock Dictionary 
 RawStockList = {}
 
@@ -86,7 +84,6 @@ RawStockList['rawStock5'] = rawStock5
 RawStockList['rawStock6'] = rawStock6
 RawStockList['rawStock7'] = rawStock7
 RawStockList['rawStock8'] = rawStock8
-
 
 # create preTrainStock Dictionary 
 PreTrainStockList = {}
@@ -100,14 +97,26 @@ PreTrainStockList['preTrainStock6'] = preTrainStock6
 PreTrainStockList['preTrainStock7'] = preTrainStock7
 PreTrainStockList['preTrainStock8'] = preTrainStock8
 
+
 def showStockInfo(Stock):
-    Stock.info()
+    print(Stock.info())
+    print("Stock Matrix Size: " , Stock.shape)
+    print("Stock Martix Row :" ,Stock.shape[0])
+    print("Stock Martix Column :" , Stock.shape[1])
+    print("Stock Martix Total data :" , Stock.size)
 
 
-def showStockData(Stock):
+def showStockHead(Stock):
     print(Stock.head())
-    print(Stock.describe())
+    
+def showStockData(Stock):
+    print(Stock.describe())    
 
+def showStockTail(Stock):
+    print(Stock.tail())
+
+def checkStockNullData(Stock):
+    print(Stock.isna().sum())
 
 def calculateMA(Stock):
     for ma in maDay:
@@ -133,11 +142,21 @@ def showAllStockInfo(StockList):
         print("\n\rShow Stock New Info :", stockTempKey)
         showStockInfo(stockTempValue)
 
-def showAllStockData(StockList):
+def showAllStockHead(StockList):
     for stockTempKey, stockTempValue in StockList.items():
-        print("\n\rShow Stock New Info :", stockTempKey)
-        showStockData(stockTempValue)
+        print("\n\rShow Stock Head :", stockTempKey)
+        showStockHead(stockTempValue)
 
+def showAllStockTail(StockList):
+    for stockTempKey, stockTempValue in StockList.items():
+        print("\n\rShow Stock Tail :", stockTempKey)
+        showStockTail(stockTempValue)
+
+def showAllStockNullData(StockList):
+     for stockTempKey, stockTempValue in StockList.items():
+        print("\n\rShow Stock Null Data :", stockTempKey)
+        checkStockNullData(stockTempValue)
+    
 
 def plotPrice(Stock , name):
     plt.figure(figsize= (20, 10))
@@ -172,8 +191,9 @@ def plotDailyChange(Stock , name):
 
 
 showAllStockInfo(RawStockList)
-showAllStockData(RawStockList)
-
+showAllStockHead(RawStockList)
+showAllStockTail(RawStockList)
+showAllStockNullData(RawStockList)
 
 
 for stockTempKey, stockTempValue in RawStockList.items(): 
@@ -195,9 +215,9 @@ for stockTempKey, stockTempValue in RawStockList.items():
     plotVolume(stockTempValue, stockTempKey)
     plotDailyChange(stockTempValue, stockTempKey)
 
-
 showAllStockInfo(PreTrainStockList)
-showAllStockData(PreTrainStockList)
+showAllStockHead(PreTrainStockList)
+showAllStockTail(PreTrainStockList)
 
 
 class LSTMModel(nn.Module):
