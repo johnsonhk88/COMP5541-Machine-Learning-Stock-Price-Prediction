@@ -65,14 +65,22 @@ rawStock7 = pd.read_csv(RawStock7, index_col="Date", parse_dates=True)
 rawStock8 = pd.read_csv(RawStock8, index_col="Date", parse_dates=True) 
 
 
-preTrainStock1 = pd.read_csv(PreTrainStock1) 
-preTrainStock2 = pd.read_csv(PreTrainStock2) 
-preTrainStock3 = pd.read_csv(PreTrainStock3) 
-preTrainStock4 = pd.read_csv(PreTrainStock4)
-preTrainStock5 = pd.read_csv(PreTrainStock5) 
-preTrainStock6 = pd.read_csv(PreTrainStock6) 
-preTrainStock7 = pd.read_csv(PreTrainStock7) 
-preTrainStock8 = pd.read_csv(PreTrainStock8) 
+preTrainStock1 = pd.read_csv(PreTrainStock1, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock2 = pd.read_csv(PreTrainStock2, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock3 = pd.read_csv(PreTrainStock3, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock4 = pd.read_csv(PreTrainStock4, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date")
+preTrainStock5 = pd.read_csv(PreTrainStock5, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock6 = pd.read_csv(PreTrainStock6, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock7 = pd.read_csv(PreTrainStock7, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"],  index_col="Date") 
+preTrainStock8 = pd.read_csv(PreTrainStock8, header=None, delimiter='\t', 
+                     names=["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"], index_col="Date") 
 # create RowStock Dictionary 
 RawStockList = {}
 
