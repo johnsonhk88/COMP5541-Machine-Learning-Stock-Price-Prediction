@@ -26,7 +26,15 @@ import psutil
 
 EnableGPU =False
 
+train_split =0.8
 
+# define DataFrame column index
+OpenIndex =  'Open'
+CloseIndex = 'Close'
+HighIndex = 'High'
+LowIndex = 'Low'
+AdjCloseIndex = 'Adj Close'
+VolumeIndex = 'Volume'
 
 # Declare Train stock  path 
 PreTrainStock1 = 'preprocess_price_train/1_p_price_train.txt'
@@ -161,7 +169,7 @@ def calculateDailyChange(Stock):
     
 
 # First calculate the mid prices from the highest and lowest
-def CalculateNorm(Stock):
+def CalculateAvergePrice(Stock):
     high_prices = Stock.loc[:,'High'].to_numpy()
     low_prices = Stock.loc[:,'Low'].to_numpy()
     mid_prices = (high_prices+low_prices)/2.0
@@ -257,7 +265,7 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("\n\rCalculate Daily Change for Stock :", stockTempKey)
     calculateDailyChange(stockTempValue)
     print("\n\rCalculate High/Low/Average Price :", stockTempKey)
-    trainHigPrices , trainLowPrice,  trainMidPrice = CalculateNorm(stockTempValue)
+    trainHigPrices , trainLowPrice,  trainMidPrice = CalculateAvergePrice(stockTempValue)
     print("High Data Size :", len(trainHigPrices))
     print("Low Data Size :", len(trainLowPrice))
     print("Average Data Size :", len(trainMidPrice))
@@ -290,7 +298,15 @@ normalizeStock11 = ScaleDataNorm(RawStockList[RawStock1Key])
 showStockHead(normalizeStock11)
 print("print normalize Stock : ", normalizeStock11.iloc[3])
 
-
+#Splitting data into training set and a tEst set 
+num_data = normalizeStock11.shape[0]
+print("Number of data size of normalize stock1 : ", num_data)
+num_train = ((int)(train_split * num_data))
+print("Number of train data of normalize stock1 : ", num_train)
+train_data = normalizeStock11[AdjCloseIndex][: num_train]
+test_data =  normalizeStock11[AdjCloseIndex][num_train:]
+print("Train data  : ", train_data , ' size :', train_data.shape[0] )
+print("Test data  : ", test_data, ' size :', test_data.shape[0] )
 
 
 
@@ -344,7 +360,4 @@ class LSTMModel(nn.Module):
 
 
 
-'''
-train_data = trainMidPrice[:300]
-test_data = trainMidPrice[300:]
-'''
+
