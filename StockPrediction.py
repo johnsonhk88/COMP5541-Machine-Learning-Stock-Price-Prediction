@@ -10,6 +10,9 @@ import torchvision.datasets as dsets
 import torchvision
 from torch.autograd import Variable
 
+import sklearn
+import sklearn.preprocessing
+
 #from sklearn.metrics import accuracy_score, confusion_matrix,  classification_report
 
 
@@ -44,6 +47,26 @@ RawStock5 = 'raw_price_train/5_r_price_train.csv'
 RawStock6 = 'raw_price_train/6_r_price_train.csv'
 RawStock7 = 'raw_price_train/7_r_price_train.csv'
 RawStock8 = 'raw_price_train/8_r_price_train.csv'
+
+#define Key for dictionary
+RawStock1Key = 'rawStock1'
+RawStock2Key = 'rawStock2'
+RawStock3Key = 'rawStock3'
+RawStock4Key = 'rawStock4'
+RawStock5Key = 'rawStock5'
+RawStock6Key = 'rawStock6'
+RawStock7Key = 'rawStock7'
+RawStock8Key = 'rawStock8'
+
+PreTrainStock1Key  ='preTrainStock1'
+PreTrainStock2Key  ='preTrainStock2'
+PreTrainStock3Key  ='preTrainStock3'
+PreTrainStock4Key  ='preTrainStock4'
+PreTrainStock5Key  ='preTrainStock5'
+PreTrainStock6Key  ='preTrainStock6'
+PreTrainStock7Key  ='preTrainStock7'
+PreTrainStock8Key  ='preTrainStock8'
+
 
 
 #declare Move Average day
@@ -84,26 +107,26 @@ preTrainStock8 = pd.read_csv(PreTrainStock8, header=None, delimiter='\t',
 # create RowStock Dictionary 
 RawStockList = {}
 
-RawStockList['rawStock1'] = rawStock1
-RawStockList['rawStock2'] = rawStock2
-RawStockList['rawStock3'] = rawStock3
-RawStockList['rawStock4'] = rawStock4
-RawStockList['rawStock5'] = rawStock5
-RawStockList['rawStock6'] = rawStock6
-RawStockList['rawStock7'] = rawStock7
-RawStockList['rawStock8'] = rawStock8
+RawStockList[RawStock1Key] = rawStock1
+RawStockList[RawStock2Key] = rawStock2
+RawStockList[RawStock3Key] = rawStock3
+RawStockList[RawStock4Key] = rawStock4
+RawStockList[RawStock5Key] = rawStock5
+RawStockList[RawStock6Key] = rawStock6
+RawStockList[RawStock7Key] = rawStock7
+RawStockList[RawStock8Key] = rawStock8
 
 # create preTrainStock Dictionary 
 PreTrainStockList = {}
 
-PreTrainStockList['preTrainStock1'] = preTrainStock1
-PreTrainStockList['preTrainStock2'] = preTrainStock2
-PreTrainStockList['preTrainStock3'] = preTrainStock3
-PreTrainStockList['preTrainStock4'] = preTrainStock4
-PreTrainStockList['preTrainStock5'] = preTrainStock5
-PreTrainStockList['preTrainStock6'] = preTrainStock6
-PreTrainStockList['preTrainStock7'] = preTrainStock7
-PreTrainStockList['preTrainStock8'] = preTrainStock8
+PreTrainStockList[PreTrainStock1Key] = preTrainStock1
+PreTrainStockList[PreTrainStock2Key] = preTrainStock2
+PreTrainStockList[PreTrainStock3Key] = preTrainStock3
+PreTrainStockList[PreTrainStock4Key] = preTrainStock4
+PreTrainStockList[PreTrainStock5Key] = preTrainStock5
+PreTrainStockList[PreTrainStock6Key] = preTrainStock6
+PreTrainStockList[PreTrainStock7Key] = preTrainStock7
+PreTrainStockList[PreTrainStock8Key] = preTrainStock8
 
 
 def showStockInfo(Stock):
@@ -117,7 +140,7 @@ def showStockInfo(Stock):
 def showStockHead(Stock):
     print(Stock.head())
     
-def showStockData(Stock):
+def showStockDescribe(Stock):
     print(Stock.describe())    
 
 def showStockTail(Stock):
@@ -150,7 +173,24 @@ def augFeatures(Stock):
     Stock["month"] = pd.DatetimeIndex(Stock.iloc[:,0]).month
     Stock["date"] = pd.DatetimeIndex(Stock.iloc[:,0]).day
     Stock["day"] =  pd.DatetimeIndex(Stock.iloc[:,0]).dayofweek
+    
 
+def CalculateNormalize(Stock):
+    StockTemp = Stock.apply(lambda x: (x - np.mean(x)) / (np.max(x) - np.min(x))) # Z
+    #StockTemp = Stock.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))) # min-max
+    return StockTemp
+
+def ScaleDataNorm(Stock):
+    StockTemp = Stock.copy()
+    min_max_scaler = sklearn.preprocessing.MinMaxScaler()
+    StockTemp['Open'] = min_max_scaler.fit_transform(StockTemp['Open'].values.reshape(-1, 1))
+    StockTemp['High'] = min_max_scaler.fit_transform(StockTemp['High'].values.reshape(-1, 1))
+    StockTemp['Low'] = min_max_scaler.fit_transform(StockTemp['Low'].values.reshape(-1, 1))
+    StockTemp['Close'] = min_max_scaler.fit_transform(StockTemp['Close'].values.reshape(-1, 1))
+    StockTemp['Adj Close'] = min_max_scaler.fit_transform(StockTemp['Adj Close'].values.reshape(-1, 1))
+    #StockTemp['Volume']  = min_max_scaler.fit_transform(StockTemp['Volume'].values.reshape(-1, 1))
+    return StockTemp
+    
 
 def showAllStockInfo(StockList):
     for stockTempKey, stockTempValue in StockList.items():
@@ -234,11 +274,23 @@ showAllStockInfo(PreTrainStockList)
 showAllStockHead(PreTrainStockList)
 showAllStockTail(PreTrainStockList)
 
-print("print Raw Stock1 :", RawStockList['rawStock1'])
-print("print Raw Stock1 index column:", RawStockList['rawStock1'].iloc[:,0])
+print("print Raw Stock1 :", RawStockList[RawStock1Key])
+print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
 
-augFeatures(RawStockList['rawStock1'])
-showStockInfo(RawStockList['rawStock1'])
+#augFeatures(RawStockList[RawStock1Key])
+showStockInfo(RawStockList[RawStock1Key])
+
+# Data normalize
+normalizeStock1 = CalculateNormalize(RawStockList[RawStock1Key])
+showStockTail(normalizeStock1)
+print("print normalize Stock : ", normalizeStock1.iloc[3])
+print("print RawStock1 : ", RawStockList[RawStock1Key].iloc[3])
+
+normalizeStock11 = ScaleDataNorm(RawStockList[RawStock1Key])
+showStockHead(normalizeStock11)
+print("print normalize Stock : ", normalizeStock11.iloc[3])
+
+
 
 
 
