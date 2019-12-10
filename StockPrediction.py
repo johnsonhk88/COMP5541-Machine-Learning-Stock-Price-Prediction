@@ -190,7 +190,7 @@ def CalculateNormalize(Stock):
 
 def ScaleDataNorm(Stock):
     StockTemp = Stock.copy()
-    min_max_scaler = sklearn.preprocessing.MinMaxScaler()
+    min_max_scaler = sklearn.preprocessing.MinMaxScaler(feature_range =(-1,1))
     StockTemp['Open'] = min_max_scaler.fit_transform(StockTemp['Open'].values.reshape(-1, 1))
     StockTemp['High'] = min_max_scaler.fit_transform(StockTemp['High'].values.reshape(-1, 1))
     StockTemp['Low'] = min_max_scaler.fit_transform(StockTemp['Low'].values.reshape(-1, 1))
@@ -198,8 +198,15 @@ def ScaleDataNorm(Stock):
     StockTemp['Adj Close'] = min_max_scaler.fit_transform(StockTemp['Adj Close'].values.reshape(-1, 1))
     #StockTemp['Volume']  = min_max_scaler.fit_transform(StockTemp['Volume'].values.reshape(-1, 1))
     return StockTemp
-    
 
+def ScaleColumnData(Col, Min, Max, Fit=False):
+    min_max_scaler = sklearn.preprocessing.MinMaxScaler(feature_range =(Min,Max))
+    if(Fit):
+        OutData = min_max_scaler.fit_transform(Col)
+    else:
+        OutData = min_max_scaler.transform(Col)
+    return OutData
+        
 def showAllStockInfo(StockList):
     for stockTempKey, stockTempValue in StockList.items():
         print("\n\rShow Stock New Info :", stockTempKey)
@@ -288,7 +295,8 @@ print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
 #augFeatures(RawStockList[RawStock1Key])
 showStockInfo(RawStockList[RawStock1Key])
 
-# Data normalize
+'''
+# Data normalize scaler
 normalizeStock1 = CalculateNormalize(RawStockList[RawStock1Key])
 showStockTail(normalizeStock1)
 print("print normalize Stock : ", normalizeStock1.iloc[3])
@@ -297,18 +305,28 @@ print("print RawStock1 : ", RawStockList[RawStock1Key].iloc[3])
 normalizeStock11 = ScaleDataNorm(RawStockList[RawStock1Key])
 showStockHead(normalizeStock11)
 print("print normalize Stock : ", normalizeStock11.iloc[3])
+'''
 
-#Splitting data into training set and a tEst set 
-num_data = normalizeStock11.shape[0]
-print("Number of data size of normalize stock1 : ", num_data)
+#Splitting data into training set and a test set 
+num_data = RawStockList[RawStock1Key].shape[0]
+print("Number of data size of stock1 : ", num_data)
 num_train = ((int)(train_split * num_data))
-print("Number of train data of normalize stock1 : ", num_train)
-train_data = normalizeStock11[AdjCloseIndex][: num_train]
-test_data =  normalizeStock11[AdjCloseIndex][num_train:]
-print("Train data  : ", train_data , ' size :', train_data.shape[0] )
-print("Test data  : ", test_data, ' size :', test_data.shape[0] )
+print("Number of train data of stock1 : ", num_train)
+train_data = RawStockList[RawStock1Key][AdjCloseIndex][: num_train]
+test_data =  RawStockList[RawStock1Key][AdjCloseIndex][num_train:]
+print("Train data  : ", train_data , ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
+print("Test data  : ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
+#reshape 1D data into 2D metrix data before feed LSTM model 
+print("train_data  before reshape: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
+train_data = train_data.values.reshape(-1,1)
+test_data  = test_data.values.reshape(-1,1)
+print("train_data reshape -1 and 1 : ", train_data, ' size :', train_data.shape[0], 'Shape :',train_data.shape )
 
-
+#Data normalize scaler
+train_data = ScaleColumnData(train_data, -1, 1, True)
+test_data = ScaleColumnData(test_data, -1, 1, True)
+print("train_data  After Sacle: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
+print("test_data  After Sacle: ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
 
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
