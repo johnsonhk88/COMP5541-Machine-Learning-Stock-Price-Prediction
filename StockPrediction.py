@@ -328,6 +328,34 @@ test_data = ScaleColumnData(test_data, -1, 1, True)
 print("train_data  After Sacle: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
 print("test_data  After Sacle: ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
 
+
+# Globals
+
+INPUT_SIZE = 60
+HIDDEN_SIZE = 64
+NUM_LAYERS = 2
+OUTPUT_SIZE = 1
+
+# Hyper parameters
+
+learning_rate = 0.05# 0.001
+num_epochs = 10
+
+# Creating a data structure with 60 timesteps and 1 output
+# x_train for input sequence
+# y_train for target sequence
+X_train = []
+y_train = []
+for i in range(INPUT_SIZE, train_data.shape[0]):
+    X_train.append(train_data[i-INPUT_SIZE:i, 0])
+    y_train.append(train_data[i, 0])
+X_train, y_train = np.array(X_train), np.array(y_train)
+print("X_Train shape: ", X_train.shape)
+print(X_train)
+print("Y_Train shape: ", y_train.shape)
+print(y_train)
+
+
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
         super(LSTMModel, self).__init__()
@@ -372,9 +400,12 @@ class LSTMModel(nn.Module):
         # out.size() --> 100, 10
         return out
 
+model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
+optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
+ # loss function
+criterion = nn.MSELoss() 
 
-
-
+hidden_state = None
 
 
 
