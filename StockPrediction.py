@@ -323,23 +323,23 @@ test_data  = test_data.values.reshape(-1,1)
 print("train_data reshape -1 and 1 : ", train_data, ' size :', train_data.shape[0], 'Shape :',train_data.shape )
 
 #Data normalize scaler
-train_data = ScaleColumnData(train_data, -1, 1, True)
-test_data = ScaleColumnData(test_data, -1, 1, True)
+train_data = ScaleColumnData(train_data, 0, 1, True)
+test_data = ScaleColumnData(test_data, 0, 1, True)
 print("train_data  After Sacle: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
 print("test_data  After Sacle: ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
 
 
 # Globals
 
-INPUT_SIZE = 60
+INPUT_SIZE = 50
 HIDDEN_SIZE = 64
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
 
 # Hyper parameters
 
-learning_rate = 0.05# 0.001
-num_epochs = 10
+learning_rate = 0.01# 0.001
+num_epochs = 500
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -355,6 +355,9 @@ print(X_train)
 print("Y_Train shape: ", y_train.shape)
 print(y_train)
 
+# Reshaping 3 dimension data
+X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
+print("X_train Shape after reshape: ", X_train.shape)
 
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
@@ -399,6 +402,20 @@ class LSTMModel(nn.Module):
         out = self.fc(out[:, -1, :]) 
         # out.size() --> 100, 10
         return out
+    
+def LTSMStockTrain(hidden_state, model):
+    for epoch in range(num_epochs):
+        inputs = Variable(torch.from_numpy(X_train).float())
+        labels = Variable(torch.from_numpy(y_train).float())
+        
+        output = model(inputs) 
+        loss = criterion(output.view(-1), labels)
+        optimiser.zero_grad()
+        loss.backward(retain_graph=True)                     # back propagation
+        optimiser.step()                                     # update the parameters
+        if epoch % 50 == 0:
+            print('epoch {}, loss {}'.format(epoch,loss.item()))
+
 
 model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
 optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -406,6 +423,8 @@ optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.MSELoss() 
 
 hidden_state = None
+LTSMStockTrain(hidden_state, model)
+
 
 
 
