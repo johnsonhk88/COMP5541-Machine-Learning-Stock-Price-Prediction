@@ -317,33 +317,32 @@ num_data = RawStockList[RawStock1Key].shape[0]
 print("Number of data size of stock1 : ", num_data)
 num_train = ((int)(train_split * num_data))
 print("Number of train data of stock1 : ", num_train)
-train_data = RawStockList[RawStock1Key][AdjCloseIndex][: num_train]
-test_data =  RawStockList[RawStock1Key][AdjCloseIndex][num_train:]
+
+
+#Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
+print('RawStock1', RawStockList[RawStock1Key][AdjCloseIndex].shape)
+rawStockData =RawStockList[RawStock1Key][AdjCloseIndex].values.reshape(-1,1)
+#print(type(rawStockData))
+
+scaledData , trainScalar = ScaleColumnData(rawStockData, 0, 1, True)
+print('Scaled Data:', scaledData)
+#split data 
+train_data = scaledData[: num_train] 
+test_data =  scaledData[num_train:]
 print("Train data  : ", train_data , ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
 print("Test data  : ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
-#reshape 1D data into 2D metrix data before feed LSTM model 
-print("train_data  before reshape: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
-train_data = train_data.values.reshape(-1,1)
-test_data  = test_data.values.reshape(-1,1)
-print("train_data reshape -1 and 1 : ", train_data, ' size :', train_data.shape[0], 'Shape :',train_data.shape )
-
-#Data normalize scaler
-train_data , trainScalar = ScaleColumnData(train_data, 0, 1, True)
-test_data , testScalar = ScaleColumnData(test_data, 0, 1, True)
-print("train_data  After Sacle: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
-print("test_data  After Sacle: ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
 
 
 # Globals
 
-INPUT_SIZE = 50
-HIDDEN_SIZE = 64
+INPUT_SIZE = 60
+HIDDEN_SIZE = 100
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
 
 # Hyper parameters
 
-learning_rate = 0.01# 0.001
+learning_rate = 0.001# 0.001
 num_epochs = 1000
 
 # Creating a data structure with 60 timesteps and 1 output
@@ -437,16 +436,19 @@ LTSMStockTrain(hidden_state, model)
 #recovery origin train test data 
 print('train data shape :', train_data.shape, type(train_data))
 print('test data shape :', test_data.shape, type(test_data))
+origin_data = np.concatenate((train_data, test_data), axis=0)
 #inverse scaler
-originTrain = trainScalar.inverse_transform(train_data)
-originTest  = testScalar.inverse_transform(test_data)
-origin_data = np.concatenate((originTrain, originTest), axis=0)
+origin_data = trainScalar.inverse_transform(origin_data)
+
 
 #Test model 
+
 testInputs = origin_data.reshape(-1, 1)
 testInputs = trainScalar.transform(testInputs)
+
+MaxRange = 80 #400
 X_test = []
-for i in range(INPUT_SIZE, 80):
+for i in range(INPUT_SIZE, MaxRange):
     X_test.append(testInputs[i-INPUT_SIZE:i, 0])
 X_test = np.array(X_test)
 X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
@@ -456,9 +458,10 @@ hidden_state = None
 test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
 predicted_stock_price = model(test_inputs)
 predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
+#invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
 
-
+print('Predicted stock price shape:', predicted_stock_price.shape)
 
 plt.figure(figsize=(10,6))
 plt.plot(resultEpoch, resultLoss)
