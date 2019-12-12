@@ -259,6 +259,11 @@ def plotDailyChange(Stock , name):
     plt.show()
 
 
+# start main program
+resultEpoch = []
+resultLoss = []    
+
+
 
 showAllStockInfo(RawStockList)
 showAllStockHead(RawStockList)
@@ -339,7 +344,7 @@ OUTPUT_SIZE = 1
 # Hyper parameters
 
 learning_rate = 0.01# 0.001
-num_epochs = 500
+num_epochs = 1000
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -351,9 +356,9 @@ for i in range(INPUT_SIZE, train_data.shape[0]):
     y_train.append(train_data[i, 0])
 X_train, y_train = np.array(X_train), np.array(y_train)
 print("X_Train shape: ", X_train.shape)
-print(X_train)
+#print(X_train)
 print("Y_Train shape: ", y_train.shape)
-print(y_train)
+#print(y_train)
 
 # Reshaping 3 dimension data
 X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
@@ -415,6 +420,8 @@ def LTSMStockTrain(hidden_state, model):
         optimiser.step()                                     # update the parameters
         if epoch % 50 == 0:
             print('epoch {}, loss {}'.format(epoch,loss.item()))
+        resultEpoch.append(epoch)
+        resultLoss.append(loss.item())
 
 
 model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
@@ -425,6 +432,19 @@ criterion = nn.MSELoss()
 hidden_state = None
 LTSMStockTrain(hidden_state, model)
 
+
+plt.plot(resultEpoch, resultLoss)
+plt.xlabel('Step (Training)')
+plt.ylabel('Loss (%)')
+plt.title('Loss Vs Number of Step')
+plt.show()
+
+
+plt.plot(test_data)
+plt.xlabel('Date Time')
+plt.ylabel('Price')
+plt.title('Plot Test data')
+plt.show()
 
 
 
