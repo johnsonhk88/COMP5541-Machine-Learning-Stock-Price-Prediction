@@ -205,7 +205,7 @@ def ScaleColumnData(Col, Min, Max, Fit=False):
         OutData = min_max_scaler.fit_transform(Col)
     else:
         OutData = min_max_scaler.transform(Col)
-    return OutData
+    return OutData , min_max_scaler
         
 def showAllStockInfo(StockList):
     for stockTempKey, stockTempValue in StockList.items():
@@ -328,8 +328,8 @@ test_data  = test_data.values.reshape(-1,1)
 print("train_data reshape -1 and 1 : ", train_data, ' size :', train_data.shape[0], 'Shape :',train_data.shape )
 
 #Data normalize scaler
-train_data = ScaleColumnData(train_data, 0, 1, True)
-test_data = ScaleColumnData(test_data, 0, 1, True)
+train_data , trainScalar = ScaleColumnData(train_data, 0, 1, True)
+test_data , testScalar = ScaleColumnData(test_data, 0, 1, True)
 print("train_data  After Sacle: ", train_data, ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
 print("test_data  After Sacle: ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
 
@@ -433,6 +433,34 @@ hidden_state = None
 LTSMStockTrain(hidden_state, model)
 
 
+
+#recovery origin train test data 
+print('train data shape :', train_data.shape, type(train_data))
+print('test data shape :', test_data.shape, type(test_data))
+#inverse scaler
+originTrain = trainScalar.inverse_transform(train_data)
+originTest  = testScalar.inverse_transform(test_data)
+origin_data = np.concatenate((originTrain, originTest), axis=0)
+
+#Test model 
+testInputs = origin_data.reshape(-1, 1)
+testInputs = trainScalar.transform(testInputs)
+X_test = []
+for i in range(INPUT_SIZE, 80):
+    X_test.append(testInputs[i-INPUT_SIZE:i, 0])
+X_test = np.array(X_test)
+X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
+
+X_train_X_test = np.concatenate((X_train, X_test),axis=0)
+hidden_state = None
+test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
+predicted_stock_price = model(test_inputs)
+predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
+predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
+
+
+
+plt.figure(figsize=(10,6))
 plt.plot(resultEpoch, resultLoss)
 plt.xlabel('Step (Training)')
 plt.ylabel('Loss (%)')
@@ -440,10 +468,15 @@ plt.title('Loss Vs Number of Step')
 plt.show()
 
 
-plt.plot(test_data)
+
+print('origin data shape :', origin_data.shape)
+plt.figure(figsize= (10,6))
+plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
+plt.plot(predicted_stock_price, color = 'red' ,label = 'Predict Price')
 plt.xlabel('Date Time')
 plt.ylabel('Price')
-plt.title('Plot Test data')
+plt.title('Predict Price Result')
+plt.legend()
 plt.show()
 
 
