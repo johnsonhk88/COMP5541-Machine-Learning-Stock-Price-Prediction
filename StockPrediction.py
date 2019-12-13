@@ -26,7 +26,7 @@ import psutil
 
 EnableGPU =False
 
-train_split =0.8
+train_split =0.7
 
 # define DataFrame column index
 OpenIndex =  'Open'
@@ -313,15 +313,17 @@ print("print normalize Stock : ", normalizeStock11.iloc[3])
 '''
 
 #Splitting data into training set and a test set 
-num_data = RawStockList[RawStock1Key].shape[0]
+TestStockKey = RawStock1Key
+TestColumn = AdjCloseIndex
+num_data = RawStockList[TestStockKey].shape[0]
 print("Number of data size of stock1 : ", num_data)
 num_train = ((int)(train_split * num_data))
 print("Number of train data of stock1 : ", num_train)
 
 
 #Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
-print('RawStock1', RawStockList[RawStock1Key][AdjCloseIndex].shape)
-rawStockData =RawStockList[RawStock1Key][AdjCloseIndex].values.reshape(-1,1)
+print('RawStock1', RawStockList[TestStockKey][TestColumn].shape)
+rawStockData =RawStockList[TestStockKey][TestColumn].values.reshape(-1,1)
 #print(type(rawStockData))
 
 scaledData , trainScalar = ScaleColumnData(rawStockData, 0, 1, True)
@@ -329,13 +331,14 @@ print('Scaled Data:', scaledData)
 #split data 
 train_data = scaledData[: num_train] 
 test_data =  scaledData[num_train:]
-print("Train data  : ", train_data , ' size :', train_data.shape[0] , 'Shape :',train_data.shape )
-print("Test data  : ", test_data, ' size :', test_data.shape[0] , 'Shape :',test_data.shape)
+print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
+print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
 
 
 # Globals
 
-INPUT_SIZE = 60
+INPUT_SIZE = 60 # this depend on 
+MaxTestRange = 80
 HIDDEN_SIZE = 100
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
@@ -431,7 +434,8 @@ criterion = nn.MSELoss()
 hidden_state = None
 LTSMStockTrain(hidden_state, model)
 
-
+#save model
+torch.save(model, 'trained.pt')
 
 #recovery origin train test data 
 print('train data shape :', train_data.shape, type(train_data))
@@ -441,29 +445,35 @@ origin_data = np.concatenate((train_data, test_data), axis=0)
 origin_data = trainScalar.inverse_transform(origin_data)
 
 
-#Test model 
-
-testInputs = origin_data.reshape(-1, 1)
+#Test model for 
+testInputs= origin_data[origin_data.shape[0]- test_data.shape[0] -INPUT_SIZE :]
+testInputs = testInputs.reshape(-1, 1)
 testInputs = trainScalar.transform(testInputs)
+print('test input shape from origin data :', testInputs.shape, type(testInputs))
 
-MaxRange = 80 #400
+
 X_test = []
-for i in range(INPUT_SIZE, MaxRange):
+for i in range(INPUT_SIZE, MaxTestRange):
     X_test.append(testInputs[i-INPUT_SIZE:i, 0])
 X_test = np.array(X_test)
 X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
-
+print('X test shape :', X_test.shape, type(X_test))
 X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 hidden_state = None
 test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
+print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
 predicted_stock_price = model(test_inputs)
 predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
 #invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
 
+
 print('Predicted stock price shape:', predicted_stock_price.shape)
 
-plt.figure(figsize=(10,6))
+real_stock_price_all = origin_data[INPUT_SIZE:]#np.concatenate((training_set[INPUT_SIZE:], real_stock_price))
+
+
+plt.figure(figsize=(12,8))
 plt.plot(resultEpoch, resultLoss)
 plt.xlabel('Step (Training)')
 plt.ylabel('Loss (%)')
@@ -473,8 +483,9 @@ plt.show()
 
 
 print('origin data shape :', origin_data.shape)
-plt.figure(figsize= (10,6))
-plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
+plt.figure(figsize= (12,8))
+#plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
+plt.plot(real_stock_price_all, color = 'blue' ,label = 'Real Price')
 plt.plot(predicted_stock_price, color = 'red' ,label = 'Predict Price')
 plt.xlabel('Date Time')
 plt.ylabel('Price')
