@@ -24,9 +24,22 @@ import memory_profiler
 
 import psutil
 
-EnableGPU =False
+EnableGPU =True
 
 train_split =0.8
+
+# CPU to GPU
+if torch.cuda.is_available() and EnableGPU:
+  #  tensor_cpu.cuda()
+    torch.cuda.empty_cache()
+    print("GPU is available")
+    device = torch.device("cuda:0") # Uncomment this to run on GPU
+    print("GPU Name: ", torch.cuda.get_device_name())
+    
+else: 
+    print('No GPU')
+    
+print("PyTorch Version: ", torch.__version__)
 
 # define DataFrame column index
 OpenIndex =  'Open'
@@ -327,7 +340,7 @@ rawStockData =RawStockList[TestStockKey][TestColumn].values.reshape(-1,1)
 #print(type(rawStockData))
 
 scaledData , trainScalar = ScaleColumnData(rawStockData, 0, 1, True)
-print('Scaled Data:', scaledData)
+#print('Scaled Data:', scaledData)
 #split data 
 train_data = scaledData[: num_train] 
 test_data =  scaledData[num_train:]
@@ -346,7 +359,7 @@ OUTPUT_SIZE = 1
 # Hyper parameters
 
 learning_rate = 0.005# 0.001
-num_epochs = 50
+num_epochs = 100
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -357,7 +370,7 @@ hidden_state = None
 for i in range(INPUT_SIZE, train_data.shape[0]):
     X_train.append(train_data[i-INPUT_SIZE:i, 0])
     y_train.append(train_data[i, 0])
-#    y_train.append(train_data[i:i+OUTPUT_SIZE, 0])
+    #y_train.append(train_data[i:i+OUTPUT_SIZE, 0])
 X_train, y_train = np.array(X_train), np.array(y_train)
 print("X_Train shape: ", X_train.shape)
 #print(X_train)
@@ -441,9 +454,14 @@ class LSTMModel(nn.Module):
 
     
 def LTSMStockTrain(hidden_state, model):
+    print(y_train.shape)
     for epoch in range(num_epochs):
-        inputs = Variable(torch.from_numpy(X_train).float())
-        labels = Variable(torch.from_numpy(y_train).float())
+        if torch.cuda.is_available() and EnableGPU:
+            inputs = Variable(torch.from_numpy(X_train).float().cuda())
+            labels = Variable(torch.from_numpy(y_train).float().cuda())
+        else:
+            inputs = Variable(torch.from_numpy(X_train).float())
+            labels = Variable(torch.from_numpy(y_train).float())
         
         output, hidden_state  = model(inputs, hidden_state) 
         loss = criterion(output.view(-1), labels)
@@ -457,6 +475,9 @@ def LTSMStockTrain(hidden_state, model):
 
 
 model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
+
+if torch.cuda.is_available() and EnableGPU:
+    model.cuda()
 optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
  # loss function
 criterion = nn.MSELoss() 
@@ -491,11 +512,21 @@ X_test = np.array(X_test)
 X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 print('X test shape :', X_test.shape, type(X_test))
 X_train_X_test = np.concatenate((X_train, X_test),axis=0)
+
+#predict from after trained model
+
 hidden_state = None
-test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
-print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-predicted_stock_price , b = model(test_inputs, hidden_state)
-predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
+if torch.cuda.is_available() and EnableGPU:
+    test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
+    print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
+    predicted_stock_price , b = model(test_inputs, hidden_state)
+    print('predict stock prince shape :', test_inputs.shape, type(test_inputs))
+    predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
+else:
+    test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
+    print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
+    predicted_stock_price , b = model(test_inputs, hidden_state)
+    predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
 #invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
 
