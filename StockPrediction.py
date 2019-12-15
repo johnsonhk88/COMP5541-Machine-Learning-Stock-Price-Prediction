@@ -455,6 +455,7 @@ class LSTMModel(nn.Module):
     
 def LTSMStockTrain(hidden_state, model):
     print(y_train.shape)
+    hiddenState = hidden_state
     for epoch in range(num_epochs):
         if torch.cuda.is_available() and EnableGPU:
             inputs = Variable(torch.from_numpy(X_train).float().cuda())
@@ -463,7 +464,7 @@ def LTSMStockTrain(hidden_state, model):
             inputs = Variable(torch.from_numpy(X_train).float())
             labels = Variable(torch.from_numpy(y_train).float())
         
-        output, hidden_state  = model(inputs, hidden_state) 
+        output, hiddenState  = model(inputs, hiddenState) 
         loss = criterion(output.view(-1), labels)
         optimiser.zero_grad()
         loss.backward(retain_graph=True)                     # back propagation
@@ -516,6 +517,7 @@ X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 #predict from after trained model
 
 hidden_state = None
+StartTestTime = datetime.datetime.now()
 if torch.cuda.is_available() and EnableGPU:
     test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
     print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
@@ -529,6 +531,7 @@ else:
     predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
 #invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
+StopTestTime = datetime.datetime.now()- StartTestTime
 
 
 print('Predicted stock price shape:', predicted_stock_price.shape)
@@ -556,8 +559,12 @@ plt.title('Predict Price Result')
 plt.legend()
 plt.show()
 
-
-print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
+if torch.cuda.is_available() and EnableGPU:
+     print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
+     print("(GPU) Test Time :", StopTestTime.total_seconds() , "s")
+else:
+    print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
+    print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
 
 
 
