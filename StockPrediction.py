@@ -564,6 +564,7 @@ plt.show()
 if torch.cuda.is_available() and EnableGPU:
      print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
      print("(GPU) Test Time :", StopTestTime.total_seconds() , "s")
+     torch.cuda.empty_cache() 
 else:
     print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
     print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
