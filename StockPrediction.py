@@ -488,7 +488,7 @@ StartTrainTime = datetime.datetime.now()
 LTSMStockTrain(hidden_state, model)
 
 #save model
-torch.save(model, 'trained.pt')
+torch.save(model, 'trained.pkl')
 StopTrainTime = datetime.datetime.now()- StartTrainTime
 
 #recovery origin train test data 
@@ -518,16 +518,18 @@ X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 
 hidden_state = None
 StartTestTime = datetime.datetime.now()
+#load model
+model2 = torch.load('trained.pkl')
 if torch.cuda.is_available() and EnableGPU:
     test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
     print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-    predicted_stock_price , b = model(test_inputs, hidden_state)
+    predicted_stock_price , b = model2(test_inputs, hidden_state)
     print('predict stock prince shape :', test_inputs.shape, type(test_inputs))
     predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
 else:
     test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
     print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-    predicted_stock_price , b = model(test_inputs, hidden_state)
+    predicted_stock_price , b = model2(test_inputs, hidden_state)
     predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
 #invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
