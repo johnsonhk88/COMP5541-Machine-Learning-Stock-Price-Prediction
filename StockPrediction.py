@@ -26,7 +26,7 @@ import psutil
 
 EnableGPU =False
 
-train_split =0.7
+train_split =0.8
 
 # define DataFrame column index
 OpenIndex =  'Open'
@@ -345,17 +345,19 @@ OUTPUT_SIZE = 1
 
 # Hyper parameters
 
-learning_rate = 0.001# 0.001
-num_epochs = 1000
+learning_rate = 0.005# 0.001
+num_epochs = 50
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
 # y_train for target sequence
 X_train = []
 y_train = []
+hidden_state = None
 for i in range(INPUT_SIZE, train_data.shape[0]):
     X_train.append(train_data[i-INPUT_SIZE:i, 0])
     y_train.append(train_data[i, 0])
+#    y_train.append(train_data[i:i+OUTPUT_SIZE, 0])
 X_train, y_train = np.array(X_train), np.array(y_train)
 print("X_Train shape: ", X_train.shape)
 #print(X_train)
@@ -366,6 +368,7 @@ print("Y_Train shape: ", y_train.shape)
 X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
 print("X_train Shape after reshape: ", X_train.shape)
 
+'''
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
         super(LSTMModel, self).__init__()
@@ -378,7 +381,11 @@ class LSTMModel(nn.Module):
         # Building your LSTM
         # batch_first=True causes input/output tensors to be of shape
         # (batch_dim, seq_dim, feature_dim)
-        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
+        self.lstm = nn.LSTM(input_size= input_dim,
+                            hidden_size= hidden_dim, 
+                            num_layers=layer_dim,
+                            batch_first= True
+                            )
         
         # Readout layer
         self.fc = nn.Linear(hidden_dim, output_dim)
@@ -409,18 +416,41 @@ class LSTMModel(nn.Module):
         out = self.fc(out[:, -1, :]) 
         # out.size() --> 100, 10
         return out
+'''
+class LSTMModel(nn.Module):
+    def __init__(self, i_size, h_size, n_layers, o_size):
+        super(LSTMModel, self).__init__()
+
+        self.lstm = nn.LSTM(
+            input_size=i_size,
+            hidden_size=h_size,
+            num_layers=n_layers
+        )
+        self.out = nn.Linear(h_size, o_size)
+
+    def forward(self, x, h_state):
+        r_out, hidden_state = self.lstm(x, h_state)
+        
+        hidden_size = hidden_state[-1].size(-1)
+        r_out = r_out.view(-1, hidden_size)
+        outs = self.out(r_out)
+
+        return outs, hidden_state
+
+
+
     
 def LTSMStockTrain(hidden_state, model):
     for epoch in range(num_epochs):
         inputs = Variable(torch.from_numpy(X_train).float())
         labels = Variable(torch.from_numpy(y_train).float())
         
-        output = model(inputs) 
+        output, hidden_state  = model(inputs, hidden_state) 
         loss = criterion(output.view(-1), labels)
         optimiser.zero_grad()
         loss.backward(retain_graph=True)                     # back propagation
         optimiser.step()                                     # update the parameters
-        if epoch % 50 == 0:
+        if epoch % 5 == 0:
             print('epoch {}, loss {}'.format(epoch,loss.item()))
         resultEpoch.append(epoch)
         resultLoss.append(loss.item())
@@ -432,10 +462,12 @@ optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.MSELoss() 
 
 hidden_state = None
+StartTrainTime = datetime.datetime.now()
 LTSMStockTrain(hidden_state, model)
 
 #save model
 torch.save(model, 'trained.pt')
+StopTrainTime = datetime.datetime.now()- StartTrainTime
 
 #recovery origin train test data 
 print('train data shape :', train_data.shape, type(train_data))
@@ -445,7 +477,7 @@ origin_data = np.concatenate((train_data, test_data), axis=0)
 origin_data = trainScalar.inverse_transform(origin_data)
 
 
-#Test model for 
+#Test model for predict 
 testInputs= origin_data[origin_data.shape[0]- test_data.shape[0] -INPUT_SIZE :]
 testInputs = testInputs.reshape(-1, 1)
 testInputs = trainScalar.transform(testInputs)
@@ -462,7 +494,7 @@ X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 hidden_state = None
 test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
 print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-predicted_stock_price = model(test_inputs)
+predicted_stock_price , b = model(test_inputs, hidden_state)
 predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
 #invert scale to predict price
 predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
@@ -492,6 +524,9 @@ plt.ylabel('Price')
 plt.title('Predict Price Result')
 plt.legend()
 plt.show()
+
+
+print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
 
 
 
