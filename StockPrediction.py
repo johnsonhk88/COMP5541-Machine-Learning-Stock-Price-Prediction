@@ -26,7 +26,7 @@ import psutil
 
 EnableGPU =True
 
-train_split =0.8
+train_split =0.99
 
 # CPU to GPU
 if torch.cuda.is_available() and EnableGPU:
@@ -313,17 +313,6 @@ print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
 #augFeatures(RawStockList[RawStock1Key])
 showStockInfo(RawStockList[RawStock1Key])
 
-'''
-# Data normalize scaler
-normalizeStock1 = CalculateNormalize(RawStockList[RawStock1Key])
-showStockTail(normalizeStock1)
-print("print normalize Stock : ", normalizeStock1.iloc[3])
-print("print RawStock1 : ", RawStockList[RawStock1Key].iloc[3])
-
-normalizeStock11 = ScaleDataNorm(RawStockList[RawStock1Key])
-showStockHead(normalizeStock11)
-print("print normalize Stock : ", normalizeStock11.iloc[3])
-'''
 
 #Splitting data into training set and a test set 
 TestStockKey = RawStock1Key
@@ -331,6 +320,7 @@ TestColumn = AdjCloseIndex
 num_data = RawStockList[TestStockKey].shape[0]
 print("Number of data size of stock1 : ", num_data)
 num_train = ((int)(train_split * num_data))
+#num_train = ((int)(num_data-train_split ))
 print("Number of train data of stock1 : ", num_train)
 
 
@@ -351,14 +341,15 @@ print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
 # Globals
 
 INPUT_SIZE = 60 # this depend on 
-MaxTestRange = 80
+MaxTestRange = INPUT_SIZE + 6
 HIDDEN_SIZE = 100
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
+TestPredictDay = 30
 
 # Hyper parameters
 
-learning_rate = 0.005# 0.001
+learning_rate = 0.001# 0.001
 num_epochs = 100
 
 # Creating a data structure with 60 timesteps and 1 output
@@ -369,11 +360,13 @@ y_train = []
 hidden_state = None
 for i in range(INPUT_SIZE, train_data.shape[0]):
     X_train.append(train_data[i-INPUT_SIZE:i, 0])
+    #y_train.append(train_data[i, 0])
     y_train.append(train_data[i, 0])
-    #y_train.append(train_data[i:i+OUTPUT_SIZE, 0])
 X_train, y_train = np.array(X_train), np.array(y_train)
 print("X_Train shape: ", X_train.shape)
-#print(X_train)
+print("Y_Train shape: ", y_train.shape)#print(X_train)
+#y_train.reshape(y_train.shape[0], 2)
+#y_train.reshape(((int)(y_train.shape[0]/OUTPUT_SIZE)), OUTPUT_SIZE)
 print("Y_Train shape: ", y_train.shape)
 #print(y_train)
 
@@ -381,55 +374,6 @@ print("Y_Train shape: ", y_train.shape)
 X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
 print("X_train Shape after reshape: ", X_train.shape)
 
-'''
-class LSTMModel(nn.Module):
-    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
-        super(LSTMModel, self).__init__()
-        # Hidden dimensions
-        self.hidden_dim = hidden_dim
-        
-        # Number of hidden layers
-        self.layer_dim = layer_dim
-        
-        # Building your LSTM
-        # batch_first=True causes input/output tensors to be of shape
-        # (batch_dim, seq_dim, feature_dim)
-        self.lstm = nn.LSTM(input_size= input_dim,
-                            hidden_size= hidden_dim, 
-                            num_layers=layer_dim,
-                            batch_first= True
-                            )
-        
-        # Readout layer
-        self.fc = nn.Linear(hidden_dim, output_dim)
-    
-    def forward(self, x):
-        # Initialize hidden state with zeros
-        #######################
-        #  USE GPU FOR MODEL  #
-        #######################
-
-        if torch.cuda.is_available() and EnableGPU:
-            h0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).cuda())
-        else:
-            h0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim))
-        
-        # Initialize cell state
-        if torch.cuda.is_available() and EnableGPU:
-            c0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).cuda())
-        else:
-            c0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim))
-        
-        # One time step
-        out, (hn, cn) = self.lstm(x, (h0,c0))
-        
-        # Index hidden state of last time step
-        # out.size() --> 100, 28, 100
-        # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! 
-        out = self.fc(out[:, -1, :]) 
-        # out.size() --> 100, 10
-        return out
-'''
 class LSTMModel(nn.Module):
     def __init__(self, i_size, h_size, n_layers, o_size):
         super(LSTMModel, self).__init__()
@@ -505,15 +449,23 @@ testInputs = testInputs.reshape(-1, 1)
 testInputs = trainScalar.transform(testInputs)
 print('test input shape from origin data :', testInputs.shape, type(testInputs))
 
-
+#MaxTestRange = origin_data.shape[0]
 X_test = []
 for i in range(INPUT_SIZE, MaxTestRange):
     X_test.append(testInputs[i-INPUT_SIZE:i, 0])
 X_test = np.array(X_test)
+#padding 7days zero data for test
+Zero = np.zeros([origin_data.shape[0]-X_test.shape[0]- X_train.shape[0]- INPUT_SIZE + TestPredictDay ,1, X_test.shape[1]], dtype = float)
+#Zero = np.zeros([origin_data.shape[0]-X_train.shape[0] + 7 ,1, X_test.shape[1]], dtype = float)
+print('Zero shape: ', Zero.shape )
+
 X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 print('X test shape :', X_test.shape, type(X_test))
-X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 
+
+#X_train + Xtest 
+X_train_X_test = np.concatenate((X_train, X_test, Zero),axis=0)
+print('X_train + X_Test shape :', X_train_X_test.shape, type(X_train_X_test))
 #predict from after trained model
 
 hidden_state = None
@@ -524,7 +476,7 @@ if torch.cuda.is_available() and EnableGPU:
     test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
     print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
     predicted_stock_price , b = model2(test_inputs, hidden_state)
-    print('predict stock prince shape :', test_inputs.shape, type(test_inputs))
+    print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
     predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
 else:
     test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
