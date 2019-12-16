@@ -317,7 +317,10 @@ showStockInfo(RawStockList[RawStock1Key])
 #Splitting data into training set and a test set 
 TestStockKey = RawStock1Key
 TestColumn = AdjCloseIndex
-num_data = RawStockList[TestStockKey].shape[0]
+TestStock = RawStockList[TestStockKey]
+
+
+num_data = TestStock.shape[0]
 print("Number of data size of stock1 : ", num_data)
 num_train = ((int)(train_split * num_data))
 #num_train = ((int)(num_data-train_split ))
@@ -325,8 +328,8 @@ print("Number of train data of stock1 : ", num_train)
 
 
 #Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
-print('RawStock1', RawStockList[TestStockKey][TestColumn].shape)
-rawStockData =RawStockList[TestStockKey][TestColumn].values.reshape(-1,1)
+print('RawStock1', TestStock[TestColumn].shape)
+rawStockData =TestStock[TestColumn].values.reshape(-1,1)
 #print(type(rawStockData))
 
 scaledData , trainScalar = ScaleColumnData(rawStockData, 0, 1, True)
@@ -345,7 +348,7 @@ MaxTestRange = INPUT_SIZE + 6
 HIDDEN_SIZE = 100
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
-TestPredictDay = 30
+TestPredictDay = 10
 
 # Hyper parameters
 
@@ -507,11 +510,26 @@ plt.figure(figsize= (12,8))
 #plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
 plt.plot(real_stock_price_all, color = 'blue' ,label = 'Real Price')
 plt.plot(predicted_stock_price, color = 'red' ,label = 'Predict Price')
+plt.xticks(range(0, TestStock.shape[0],50),TestStock.index[60::50], rotation=45)
 plt.xlabel('Date Time')
 plt.ylabel('Price')
 plt.title('Predict Price Result')
 plt.legend()
 plt.show()
+
+#print('origin data shape :', origin_data.shape)
+plt.figure(figsize= (12,8))
+#plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
+plt.plot(real_stock_price_all[750:], color = 'blue' ,label = 'Real Price')
+plt.plot(predicted_stock_price[750:], color = 'red' ,label = 'Predict Price')
+#plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
+plt.xlabel('Date Time')
+plt.ylabel('Price')
+plt.title('Predict Price Result Zoom In')
+plt.legend()
+plt.show()
+
+
 
 if torch.cuda.is_available() and EnableGPU:
      print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
