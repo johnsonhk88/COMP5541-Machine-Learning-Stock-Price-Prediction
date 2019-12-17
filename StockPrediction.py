@@ -353,7 +353,7 @@ TestPredictDay = 10
 # Hyper parameters
 
 learning_rate = 0.0005# 0.001
-num_epochs = 50
+num_epochs = 200
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -493,67 +493,59 @@ else:
 
 
 # For predict future n day 
-TestData = []    
+ 
 PrePredictOut =[]
-
-    
-previousInputs= origin_data[-INPUT_SIZE-1 :] # 
-previousInputs = previousInputs.reshape(-1, 1)
-previousInputs = trainScalar.transform(previousInputs)
-print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
-
-
-
-for i in range(INPUT_SIZE, INPUT_SIZE+2):
-    TestData.append(previousInputs[i-INPUT_SIZE:i, 0])
-
-TestData = np.array(TestData)
-print('TestData input shape :', TestData.shape, type(TestData))
-TestData = np.reshape(TestData, (TestData.shape[0], 1, TestData.shape[1]))
-print('TestData input after reshape :', TestData.shape, type(TestData))
-
 hidden_state = None
-#load model
-model2 = torch.load('trained.pkl')
-if torch.cuda.is_available() and EnableGPU:
-    predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
-    print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
-    Npredicted_stock_price , b = model2(predict_inputs, hidden_state)
-    print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
-    Npredicted_stock_price = np.reshape(Npredicted_stock_price.cpu().detach().numpy(), (predict_inputs.shape[0], 1))
-    print('N predict stock price', Npredicted_stock_price)
-    PrePredictOut.append(Npredicted_stock_price[-1:, 0])
-    print('PrePredictOut :', PrePredictOut)
-else:
-    predict_input = Variable(torch.from_numpy(TestData).float())
-    print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
-    Npredicted_stock_price , b = model2(predict_inputs, hidden_state)
-    Npredicted_stock_price = np.reshape(Npredicted_stock_price.detach().numpy(), (predict_input.shape[0], 1))
-
-
-PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
-print('Predict Output Value after Scalar: ', PredictOutputValue)
-'''
-for i in range(1, TestPredictDay-1):
-    
-    TestData = []
-    # PredictData = predicted_stock_price[ X_train.shape[0]+i:]
-    #PredictData.reshape(PredictData.shape[0],1, X_test.shape[1] )
-    #PredictData = np.reshape(PredictData, ((PredictData.shape[0], 1)))
-    PredictData = np.reshape(predicted_stock_price,  (predicted_stock_price.shape[0], 1, INPUT_SIZE))
-    hidden_state = None
-    if torch.cuda.is_available() and EnableGPU:
-        test_inputs = Variable(torch.from_numpy(PredictData).float().cuda())
-        #print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-        predicted_stock_price , b = model2(test_inputs, hidden_state)
-       # print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
-        predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
+for day in range (0, TestPredictDay + 1):
+    print('Predict Day : ', day)
+    if day != 0:
+        previousInputs= origin_data[-INPUT_SIZE -1  :] # get last 61 days result 
+        #previousInputs[-1] = PrePredictOut[-1]
+        previousInputs = np.concatenate((previousInputs, PrePredictOut),axis=0) # add Predict n day out 
+        print('New Previous Input shape', previousInputs)
     else:
-        test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
-        print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-        predicted_stock_price , b = model2(test_inputs, hidden_state)
-        predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
-''' 
+        previousInputs= origin_data[-INPUT_SIZE -1+day :] 
+    
+    previousInputs = previousInputs.reshape(-1, 1)
+    previousInputs = trainScalar.transform(previousInputs)
+    print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
+    TestData = []   
+    if day != 0:
+        for i in range(INPUT_SIZE, INPUT_SIZE+2):
+            TestData.append(previousInputs[i-INPUT_SIZE+day: i +day, 0]) # shift day to 
+    else:    
+        for i in range(INPUT_SIZE, INPUT_SIZE+2):
+            TestData.append(previousInputs[i-INPUT_SIZE:i, 0])
+
+    TestData = np.array(TestData)
+    print('TestData input shape :', TestData.shape, type(TestData))
+    TestData = np.reshape(TestData, (TestData.shape[0], 1, TestData.shape[1]))
+    print('TestData input after reshape :', TestData.shape, type(TestData))
+
+    
+    #load model
+    model2 = torch.load('trained.pkl')
+    if torch.cuda.is_available() and EnableGPU:
+        predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
+        print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+        Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
+        print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
+        Npredicted_stock_price = np.reshape(Npredicted_stock_price.cpu().detach().numpy(), (predict_inputs.shape[0], 1))
+        print('N predict stock price', Npredicted_stock_price)
+        PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
+        #PrePredictOut.append(Npredicted_stock_price[-1:, 0])
+        PrePredictOut.append(PredictOutputValue[-1:, 0])
+        print('PrePredictOut :', PrePredictOut)
+    else:
+        predict_input = Variable(torch.from_numpy(TestData).float())
+        print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+        Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
+        Npredicted_stock_price = np.reshape(Npredicted_stock_price.detach().numpy(), (predict_input.shape[0], 1))
+
+
+    PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
+    print('Predict Output Value after Scalar: ', PredictOutputValue)
+
 
 
 #invert scale to predict price
@@ -585,7 +577,8 @@ plt.title('Predict Price Result')
 plt.legend()
 plt.show()
 
-#print('origin data shape :', origin_data.shape)
+
+'''
 plt.figure(figsize= (12,8))
 #plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
 plt.plot(real_stock_price_all[760:], color = 'blue' ,label = 'Real Price')
@@ -596,13 +589,13 @@ plt.ylabel('Price')
 plt.title('Predict Price Result Zoom In')
 plt.legend()
 plt.show()
-
+'''
 
 
 plt.figure(figsize= (12,8))
 #plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
 #plt.plot(real_stock_price_all[-INPUT_SIZE:], color = 'blue' ,label = 'Real Price')
-plt.plot(PredictOutputValue, color = 'red' ,label = 'Predict Fucntion Price')
+plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
 #plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
 plt.xlabel('Date Time (day)')
 plt.ylabel('Price')
