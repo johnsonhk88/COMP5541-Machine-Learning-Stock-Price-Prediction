@@ -353,7 +353,7 @@ TestPredictDay = 10
 # Hyper parameters
 
 learning_rate = 0.0005# 0.001
-num_epochs = 200
+num_epochs = 500
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -458,17 +458,17 @@ for i in range(INPUT_SIZE, MaxTestRange):
     X_test.append(testInputs[i-INPUT_SIZE:i, 0])
 X_test = np.array(X_test)
 #padding 7days zero data for test
-paddingZeroLenght = origin_data.shape[0]-X_test.shape[0]- X_train.shape[0]- INPUT_SIZE + TestPredictDay
-Zero = np.zeros([paddingZeroLenght,1, X_test.shape[1]], dtype = float)
-#Zero = np.zeros([origin_data.shape[0]-X_train.shape[0] + 7 ,1, X_test.shape[1]], dtype = float)
-print('Zero shape: ', Zero.shape )
+#paddingZeroLenght = origin_data.shape[0]-X_test.shape[0]- X_train.shape[0]- INPUT_SIZE + TestPredictDay
+#Zero = np.zeros([paddingZeroLenght,1, X_test.shape[1]], dtype = float)
+#print('Zero shape: ', Zero.shape )
 
 X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 print('X test shape :', X_test.shape, type(X_test))
 
 
 #X_train + Xtest 
-X_train_X_test = np.concatenate((X_train, X_test, Zero),axis=0)
+#X_train_X_test = np.concatenate((X_train, X_test, Zero),axis=0)
+X_train_X_test = np.concatenate((X_train, X_test),axis=0)
 print('X_train + X_Test shape :', X_train_X_test.shape, type(X_train_X_test))
 #predict from after trained model
 
@@ -573,23 +573,12 @@ plt.plot(predicted_stock_price, color = 'red' ,label = 'Predict Price')
 plt.xticks(range(0, TestStock.shape[0],50),TestStock.index[60::50], rotation=45)
 plt.xlabel('Date Time')
 plt.ylabel('Price')
-plt.title('Predict Price Result')
+plt.title('Predict Whole Price Result')
 plt.legend()
 plt.show()
 
 
-'''
-plt.figure(figsize= (12,8))
-#plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
-plt.plot(real_stock_price_all[760:], color = 'blue' ,label = 'Real Price')
-plt.plot(predicted_stock_price[760:], color = 'red' ,label = 'Predict Price')
-#plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
-plt.xlabel('Date Time (day)')
-plt.ylabel('Price')
-plt.title('Predict Price Result Zoom In')
-plt.legend()
-plt.show()
-'''
+
 
 
 plt.figure(figsize= (12,8))
@@ -597,8 +586,9 @@ plt.figure(figsize= (12,8))
 #plt.plot(real_stock_price_all[-INPUT_SIZE:], color = 'blue' ,label = 'Real Price')
 plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
 #plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
-plt.xlabel('Date Time (day)')
-plt.ylabel('Price')
+plt.xlabel('Next Time (days)')
+plt.ylabel('Predict Price')
+plt.yticks(np.arange(0, max(PrePredictOut)*1.3, 20)) 
 plt.title('Predict N Day Result Zoom ')
 plt.legend()
 plt.show()
