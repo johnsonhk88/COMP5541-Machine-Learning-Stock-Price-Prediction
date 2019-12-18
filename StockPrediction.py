@@ -365,14 +365,14 @@ print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
 INPUT_SIZE = 60 # this depend on 
 MaxTestRange = INPUT_SIZE + 6
 HIDDEN_SIZE = 100
-NUM_LAYERS = 2
+NUM_LAYERS = 3
 OUTPUT_SIZE = 1
 TestPredictDay = 7
 
 # Hyper parameters
 
 learning_rate = 0.0005# 0.001
-num_epochs = 50
+num_epochs = 250
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
