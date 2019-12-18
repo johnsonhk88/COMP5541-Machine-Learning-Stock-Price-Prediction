@@ -69,6 +69,13 @@ RawStock6 = 'raw_price_train/6_r_price_train.csv'
 RawStock7 = 'raw_price_train/7_r_price_train.csv'
 RawStock8 = 'raw_price_train/8_r_price_train.csv'
 
+#Declare Tweet Directory 
+TrainTweetDirectory = 'tweet_train/'
+
+TestTweetDirectory = 'tweet_test/'
+
+
+
 #define Key for dictionary
 RawStock1Key = 'rawStock1'
 RawStock2Key = 'rawStock2'
@@ -90,9 +97,21 @@ PreTrainStock8Key  ='preTrainStock8'
 
 
 
+
+
 #declare Move Average day
 maDay = [10, 20, 50, 100, 200]
 
+
+predictFutureDate = []
+
+predictFutureDate.append('2015-12-21')
+predictFutureDate.append('2015-12-22')
+predictFutureDate.append('2015-12-23')
+predictFutureDate.append('2015-12-24')
+predictFutureDate.append('2015-12-28')
+predictFutureDate.append('2015-12-29')
+predictFutureDate.append('2015-12-30')
 
 # Load Data from file
 trainStock1 = pd.read_csv(PreTrainStock1, header=None, delimiter='\t', 
@@ -348,12 +367,12 @@ MaxTestRange = INPUT_SIZE + 6
 HIDDEN_SIZE = 100
 NUM_LAYERS = 2
 OUTPUT_SIZE = 1
-TestPredictDay = 10
+TestPredictDay = 7
 
 # Hyper parameters
 
 learning_rate = 0.0005# 0.001
-num_epochs = 500
+num_epochs = 50
 
 # Creating a data structure with 60 timesteps and 1 output
 # x_train for input sequence
@@ -589,10 +608,10 @@ plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price'
 plt.xlabel('Next Time (days)')
 plt.ylabel('Predict Price')
 plt.yticks(np.arange(0, max(PrePredictOut)*1.3, 20)) 
+plt.xticks(range(0, TestPredictDay),predictFutureDate ) 
 plt.title('Predict N Day Result Zoom ')
 plt.legend()
 plt.show()
-
 
 
 if torch.cuda.is_available() and EnableGPU:
