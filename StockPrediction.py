@@ -26,7 +26,7 @@ import psutil
 
 EnableGPU =True
 
-train_split =0.99
+train_split = 0.8 #0.99
 
 # CPU to GPU
 if torch.cuda.is_available() and EnableGPU:
@@ -351,7 +351,7 @@ print('RawStock1', TestStock[TestColumn].shape)
 rawStockData =TestStock[TestColumn].values.reshape(-1,1)
 #print(type(rawStockData))
 
-scaledData , trainScalar = ScaleColumnData(rawStockData, 0, 1, True)
+scaledData , trainScalar = ScaleColumnData(rawStockData, -1, 1, True)
 #print('Scaled Data:', scaledData)
 #split data 
 train_data = scaledData[: num_train] 

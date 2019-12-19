@@ -60,6 +60,7 @@ for filename in filenames:
             datalines.append([json.loads(line),datetime.datetime.strptime(json.loads(line)['created_at'], '%a %b %d %H:%M:%S %z %Y').strftime("%Y-%m-%d")])
 
 datalines = sorted(datalines,key=lambda x:x[1])
+#print('\n\rData Content After sort:' , datalines)
 previous_document_date_time = ''
 for jsonline in datalines:
     document_date_time = datetime.datetime.strptime(jsonline[0]['created_at'], '%a %b %d %H:%M:%S %z %Y').strftime("%Y-%m-%d")
@@ -75,10 +76,14 @@ for jsonline in datalines:
         for word in jsonline[0]['text']:
             vocabularyList.append(word)
             tempWordList.append(word)
+
+print("Vocablary List :", vocabularyList)
+print("\n\rTemp Word List :", tempWordList)
 #last loop write       
 if document_date_time in preTrainStock1.index:        
     tweetTrainDataFrame.loc[len(tweetTrainDataFrame)] = [previous_document_date_time, jsonline[0]['text'], preTrainStock1.loc[previous_document_date_time,"Adj Close"]]     
 
+print('Tweet Train Data frame : ', tweetTrainDataFrame)
 #vocabularyList = [''.join(c for c in s if c not in string.punctuation) for s in vocabularyList]
 #vocabularyList = [s for s in vocabularyList if s]
 vocabularyTops = Counter(vocabularyList).most_common(1000)
@@ -116,7 +121,8 @@ print(scores)
 
 inputX = sentence_vectors
 inputY = tweetTrainDataFrame.iloc[:,2]
-
+print('Input X Type : ', type(inputX) , 'Data : ', inputX)
+print('Input Y Type : ', type(inputY) , 'Data : ', inputY)
 
 import torch.nn as nn
 import torch.nn.functional as F
