@@ -60,7 +60,6 @@ for filename in filenames:
             datalines.append([json.loads(line),datetime.datetime.strptime(json.loads(line)['created_at'], '%a %b %d %H:%M:%S %z %Y').strftime("%Y-%m-%d")])
 
 datalines = sorted(datalines,key=lambda x:x[1])
-#print('\n\rData Content After sort:' , datalines)
 previous_document_date_time = ''
 for jsonline in datalines:
     document_date_time = datetime.datetime.strptime(jsonline[0]['created_at'], '%a %b %d %H:%M:%S %z %Y').strftime("%Y-%m-%d")
@@ -76,17 +75,13 @@ for jsonline in datalines:
         for word in jsonline[0]['text']:
             vocabularyList.append(word)
             tempWordList.append(word)
-
-print("Vocablary List :", vocabularyList)
-print("\n\rTemp Word List :", tempWordList)
 #last loop write       
 if document_date_time in preTrainStock1.index:        
     tweetTrainDataFrame.loc[len(tweetTrainDataFrame)] = [previous_document_date_time, jsonline[0]['text'], preTrainStock1.loc[previous_document_date_time,"Adj Close"]]     
 
-print('Tweet Train Data frame : ', tweetTrainDataFrame)
 #vocabularyList = [''.join(c for c in s if c not in string.punctuation) for s in vocabularyList]
 #vocabularyList = [s for s in vocabularyList if s]
-vocabularyTops = Counter(vocabularyList).most_common(1000)
+vocabularyTops = Counter(vocabularyList).most_common(2000)
 vocabularyTopsWords = [item[0] for item in vocabularyTops]
 
 sentence_vectors = []
@@ -121,117 +116,92 @@ print(scores)
 
 inputX = sentence_vectors
 inputY = tweetTrainDataFrame.iloc[:,2]
-print('Input X Type : ', type(inputX) , 'Data : ', inputX)
-print('Input Y Type : ', type(inputY) , 'Data : ', inputY)
 
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-inputs = Variable(torch.Tensor(inputX))
-labels = Variable(torch.LongTensor(inputY))
+inputs = Variable(torch.Tensor(inputX).float())
+labels = Variable(torch.LongTensor(inputY).float())
+
+print("inputs shape: ", inputs.shape)
+print("labels shape: ", labels.shape)
+
+# Reshaping 3 dimension data
+inputs = np.reshape(inputs, (inputs.shape[0], 1, inputs.shape[1]))
+print("inputs Shape after reshape: ", inputs.shape)
+
 
 # hyperparameters
-seq_len = 1000      # |hihell| == 6, equivalent to time step
-input_size = 471   # one-hot size
-batch_size = 1   # one sentence per batch
-num_layers = 2   # one-layer rnn
-num_classes = 5  # predicting 5 distinct character
-hidden_size = 5  # output from the RNN
+input_size=2000
+output_size=1
+hidden_dim=5
+batch_size = 1
+n_layers=5
+lr=0.1
 
+loss_val = []
 
 class RNN(nn.Module):
-    """
-    The RNN model will be a RNN followed by a linear layer,
-    i.e. a fully-connected layer
-    """
-    def __init__(self, seq_len, num_classes, input_size, hidden_size, num_layers):
-        super().__init__()
-        self.seq_len = seq_len
-        self.num_layers = num_layers
-        self.input_size = input_size
-        self.num_classes = num_classes
-        self.hidden_size = hidden_size
-        self.rnn = nn.RNN(input_size, hidden_size, batch_first = True)
-        self.linear = nn.Linear(hidden_size, num_classes)
+    def __init__(self, input_size, output_size, hidden_dim, n_layers):
+        super(RNN, self).__init__()
+        
+        self.hidden_dim=hidden_dim
+        self.rnn = nn.RNN(input_size, hidden_dim, n_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, output_size)
 
-    def forward(self, x):
-        # assuming batch_first = True for RNN cells
+    def forward(self, x, hidden):
+        # x (batch_size, seq_length, input_size)
+        # hidden (n_layers, batch_size, hidden_dim)
+        # r_out (batch_size, time_step, hidden_size)
         batch_size = x.size(0)
-        hidden = self._init_hidden(batch_size)
-        x = x.view(batch_size, self.seq_len, self.input_size)
-
-        # apart from the output, rnn also gives us the hidden
-        # cell, this gives us the opportunity to pass it to
-        # the next cell if needed; we won't be needing it here
-        # because the nn.RNN already computed all the time steps
-        # for us. rnn_out will of size [batch_size, seq_len, hidden_size]
-        rnn_out, _ = self.rnn(x, hidden)
-        linear_out = self.linear(rnn_out.view(-1, hidden_size))
-        return linear_out
-
-    def _init_hidden(self, batch_size):
-        """
-        Initialize hidden cell states, assuming
-        batch_first = True for RNN cells
-        """
-        return Variable(torch.zeros(
-            batch_size, self.num_layers, self.hidden_size))
-
-
-# Set loss, optimizer and the RNN model
-torch.manual_seed(777)
-rnn = RNN(seq_len, num_classes, input_size, hidden_size, num_layers)
-print('network architecture:\n', rnn)
-
-# train the model
-num_epochs = 15
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(rnn.parameters(), lr = 0.1)
-for epoch in range(1, num_epochs + 1):
-    optimizer.zero_grad()
-    outputs = rnn(inputs)
-    loss = criterion(outputs, labels)
-    loss.backward()
-    optimizer.step()
-
-    # check the current predicted string
-    # max gives the maximum value and its
-    # corresponding index, we will only
-    # be needing the index
-    _, idx = outputs.max(dim = 1)
-    idx = idx.data.numpy()
-    print('epoch: {}, loss: {:1.3f}'.format(epoch, loss.item()))
+    
+        r_out, hidden = self.rnn(x, hidden)
+        output = self.fc(r_out)
+        return output, hidden
 
 
 
+# instantiate an RNN
+rnn = RNN(input_size, output_size, hidden_dim, n_layers)
+print(rnn)
+
+# MSE loss and Adam optimizer with a learning rate of 0.01
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(rnn.parameters(), lr=lr)
 
 
 
+final_hidden = None
+# train the RNN
+def train(rnn, n_steps, print_every):
+    
+    hidden = None     
+    
+    for batch_i, step in enumerate(range(n_steps)):
+        prediction, hidden = rnn(inputs, hidden)
+        final_hidden = hidden
 
+        ## Representing Memory ##
+        # make a new variable for hidden and detach the hidden state from its history
+        # this way, we don't backpropagate through the entire history
+        hidden = hidden.data
 
+        loss = criterion(prediction, labels)
+        loss_val.append(loss.item())
 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
+        if batch_i%print_every == 0 or batch_i == n_steps-1:
+            print("Epoch: {0}/{1}".format(batch_i+1, n_steps))
+            print('Loss: ', loss.item())
+            print(prediction.data)
+    
+    return rnn
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+train_result = train(rnn, 50, 1)
 
 
 
