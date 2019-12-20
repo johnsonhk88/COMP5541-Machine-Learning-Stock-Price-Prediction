@@ -10,12 +10,15 @@ import numpy as np
 import pandas as pd
 from sklearn import svm
 from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
 #print(torch.cuda.is_available())
 
 filenames = []
 datalines = []
 tempWordList = []
 vocabularyList = []
+resultEpoch = []
+resultLoss = []  
 
 InputFolderPath = ''
 
@@ -147,7 +150,8 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         
         self.hidden_dim=hidden_dim
-        self.rnn = nn.RNN(input_size, hidden_dim, n_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size, hidden_dim, n_layers, batch_first=True)
+        #self.rnn = nn.RNN(input_size, hidden_dim, n_layers, batch_first=True)
         self.fc = nn.Linear(hidden_dim, output_size)
 
     def forward(self, x, hidden):
@@ -156,11 +160,14 @@ class RNN(nn.Module):
         # r_out (batch_size, time_step, hidden_size)
         batch_size = x.size(0)
     
-        r_out, hidden = self.rnn(x, hidden)
+        #r_out, hidden = self.rnn(x, hidden)
+        r_out, hidden = self.lstm(x, hidden)
+        hidden_size = hidden[-1].size(-1)  # for LSTM
+        r_out = r_out.view(-1, hidden_size) # for LSTM
         output = self.fc(r_out)
         return output, hidden
 
-
+# start main program  
 
 # instantiate an RNN
 rnn = RNN(input_size, output_size, hidden_dim, n_layers)
@@ -185,23 +192,36 @@ def train(rnn, n_steps, print_every):
         ## Representing Memory ##
         # make a new variable for hidden and detach the hidden state from its history
         # this way, we don't backpropagate through the entire history
-        hidden = hidden.data
+        #hidden = hidden.data
+        hidden = hidden # for LSTM
 
         loss = criterion(prediction, labels)
         loss_val.append(loss.item())
 
         optimizer.zero_grad()
-        loss.backward()
+        loss.backward(retain_graph=True)  # for LSTM
+        #loss.backward()
         optimizer.step()
 
         if batch_i%print_every == 0 or batch_i == n_steps-1:
             print("Epoch: {0}/{1}".format(batch_i+1, n_steps))
             print('Loss: ', loss.item())
             print(prediction.data)
+        resultEpoch.append(batch_i)
+        resultLoss.append(loss.item())
     
     return rnn
 
 train_result = train(rnn, 50, 1)
+
+
+
+plt.figure(figsize=(12,8))
+plt.plot(resultEpoch, resultLoss)
+plt.xlabel('Step (Training)')
+plt.ylabel('Loss (%)')
+plt.title('Loss Vs Number of Step')
+plt.show()
 
 
 
