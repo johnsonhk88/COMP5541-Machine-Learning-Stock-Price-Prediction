@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 import datetime
 
-import memory_profiler 
+#import memory_profiler 
 
 import psutil
 
@@ -50,29 +50,29 @@ AdjCloseIndex = 'Adj Close'
 VolumeIndex = 'Volume'
 
 # Declare Train stock  path 
-PreTrainStock1 = 'preprocess_price_train/1_p_price_train.txt'
-PreTrainStock2 = 'preprocess_price_train/2_p_price_train.txt'
-PreTrainStock3 = 'preprocess_price_train/3_p_price_train.txt'
-PreTrainStock4 = 'preprocess_price_train/4_p_price_train.txt'
-PreTrainStock5 = 'preprocess_price_train/5_p_price_train.txt'
-PreTrainStock6 = 'preprocess_price_train/6_p_price_train.txt'
-PreTrainStock7 = 'preprocess_price_train/7_p_price_train.txt'
-PreTrainStock8 = 'preprocess_price_train/8_p_price_train.txt'
+PreTrainStock1 = 'stock_dataset_v3/preprocess_price_train/1_p_price_train.txt'
+PreTrainStock2 = 'stock_dataset_v3/preprocess_price_train/2_p_price_train.txt'
+PreTrainStock3 = 'stock_dataset_v3/preprocess_price_train/3_p_price_train.txt'
+PreTrainStock4 = 'stock_dataset_v3/preprocess_price_train/4_p_price_train.txt'
+PreTrainStock5 = 'stock_dataset_v3/preprocess_price_train/5_p_price_train.txt'
+PreTrainStock6 = 'stock_dataset_v3/preprocess_price_train/6_p_price_train.txt'
+PreTrainStock7 = 'stock_dataset_v3/preprocess_price_train/7_p_price_train.txt'
+PreTrainStock8 = 'stock_dataset_v3/preprocess_price_train/8_p_price_train.txt'
 
 # Declare Raw stock  path 
-RawStock1 = 'raw_price_train/1_r_price_train.csv'
-RawStock2 = 'raw_price_train/2_r_price_train.csv'
-RawStock3 = 'raw_price_train/3_r_price_train.csv'
-RawStock4 = 'raw_price_train/4_r_price_train.csv'
-RawStock5 = 'raw_price_train/5_r_price_train.csv'
-RawStock6 = 'raw_price_train/6_r_price_train.csv'
-RawStock7 = 'raw_price_train/7_r_price_train.csv'
-RawStock8 = 'raw_price_train/8_r_price_train.csv'
+RawStock1 = 'stock_dataset_v3/raw_price_train/1_r_price_train.csv'
+RawStock2 = 'stock_dataset_v3/raw_price_train/2_r_price_train.csv'
+RawStock3 = 'stock_dataset_v3/raw_price_train/3_r_price_train.csv'
+RawStock4 = 'stock_dataset_v3/raw_price_train/4_r_price_train.csv'
+RawStock5 = 'stock_dataset_v3/raw_price_train/5_r_price_train.csv'
+RawStock6 = 'stock_dataset_v3/raw_price_train/6_r_price_train.csv'
+RawStock7 = 'stock_dataset_v3/raw_price_train/7_r_price_train.csv'
+RawStock8 = 'stock_dataset_v3/raw_price_train/8_r_price_train.csv'
 
 #Declare Tweet Directory 
-TrainTweetDirectory = 'tweet_train/'
+TrainTweetDirectory = 'stock_dataset_v3/tweet_train/'
 
-TestTweetDirectory = 'tweet_test/'
+TestTweetDirectory = 'stock_dataset_v3/tweet_test/'
 
 
 
@@ -372,6 +372,7 @@ TestPredictDay = 7
 # Hyper parameters
 
 learning_rate = 0.0005# 0.001
+#num_epochs = 250
 num_epochs = 250
 
 # Creating a data structure with 60 timesteps and 1 output
