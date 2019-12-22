@@ -443,6 +443,58 @@ def LTSMStockTrain(X_train, y_train, hidden_state, model):
             print('epoch {}, loss {}'.format(epoch,loss.item()))
         resultEpoch.append(epoch)
         resultLoss.append(loss.item())
+        
+def predictByTrainHistory(train_data):
+    #recovery origin train test data 
+    print('train data shape :', train_data.shape, type(train_data))
+    print('test data shape :', test_data.shape, type(test_data))
+    origin_data = np.concatenate((train_data, test_data), axis=0)
+    #inverse scaler
+    origin_data = trainScalar.inverse_transform(origin_data)
+
+
+    #Test model for predict 
+    testInputs= origin_data[origin_data.shape[0]- test_data.shape[0] -INPUT_SIZE :]
+    testInputs = testInputs.reshape(-1, 1)
+    testInputs = trainScalar.transform(testInputs)
+    print('test input shape from origin data :', testInputs.shape, type(testInputs))
+
+    #MaxTestRange = origin_data.shape[0]
+    X_test = []
+    for i in range(INPUT_SIZE, MaxTestRange):
+        X_test.append(testInputs[i-INPUT_SIZE:i, 0])
+    X_test = np.array(X_test)
+    #padding 7days zero data for test
+    #paddingZeroLenght = origin_data.shape[0]-X_test.shape[0]- X_train.shape[0]- INPUT_SIZE + TestPredictDay
+    #Zero = np.zeros([paddingZeroLenght,1, X_test.shape[1]], dtype = float)
+    #print('Zero shape: ', Zero.shape )
+
+    X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
+    print('X test shape :', X_test.shape, type(X_test))
+
+
+    #X_train + Xtest 
+    #X_train_X_test = np.concatenate((X_train, X_test, Zero),axis=0)
+    X_train_X_test = np.concatenate((X_train, X_test),axis=0)
+    print('X_train + X_Test shape :', X_train_X_test.shape, type(X_train_X_test))
+    #predict from after trained model
+
+    hidden_state = None
+    #load model
+    model2 = torch.load('trained.pkl')
+    if torch.cuda.is_available() and EnableGPU:
+        test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
+        print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
+        predicted_stock_price , b = model2(test_inputs, hidden_state)
+        print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
+        predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
+    else:
+        test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
+        print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
+        predicted_stock_price , b = model2(test_inputs, hidden_state)
+        predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
+    
+    return origin_data , predicted_stock_price
 
 X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(RawStockList,
                                                                                                    RawStock1Key, 
@@ -464,58 +516,8 @@ LTSMStockTrain(X_train, y_train, hidden_state, model)
 torch.save(model, 'trained.pkl')
 StopTrainTime = datetime.datetime.now()- StartTrainTime
 
-#recovery origin train test data 
-print('train data shape :', train_data.shape, type(train_data))
-print('test data shape :', test_data.shape, type(test_data))
-origin_data = np.concatenate((train_data, test_data), axis=0)
-#inverse scaler
-origin_data = trainScalar.inverse_transform(origin_data)
-
-
-#Test model for predict 
-testInputs= origin_data[origin_data.shape[0]- test_data.shape[0] -INPUT_SIZE :]
-testInputs = testInputs.reshape(-1, 1)
-testInputs = trainScalar.transform(testInputs)
-print('test input shape from origin data :', testInputs.shape, type(testInputs))
-
-#MaxTestRange = origin_data.shape[0]
-X_test = []
-for i in range(INPUT_SIZE, MaxTestRange):
-    X_test.append(testInputs[i-INPUT_SIZE:i, 0])
-X_test = np.array(X_test)
-#padding 7days zero data for test
-#paddingZeroLenght = origin_data.shape[0]-X_test.shape[0]- X_train.shape[0]- INPUT_SIZE + TestPredictDay
-#Zero = np.zeros([paddingZeroLenght,1, X_test.shape[1]], dtype = float)
-#print('Zero shape: ', Zero.shape )
-
-X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
-print('X test shape :', X_test.shape, type(X_test))
-
-
-#X_train + Xtest 
-#X_train_X_test = np.concatenate((X_train, X_test, Zero),axis=0)
-X_train_X_test = np.concatenate((X_train, X_test),axis=0)
-print('X_train + X_Test shape :', X_train_X_test.shape, type(X_train_X_test))
-#predict from after trained model
-
-hidden_state = None
 StartTestTime = datetime.datetime.now()
-#load model
-model2 = torch.load('trained.pkl')
-if torch.cuda.is_available() and EnableGPU:
-    test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
-    print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-    predicted_stock_price , b = model2(test_inputs, hidden_state)
-    print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
-    predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
-else:
-    test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
-    print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
-    predicted_stock_price , b = model2(test_inputs, hidden_state)
-    predicted_stock_price = np.reshape(predicted_stock_price.detach().numpy(), (test_inputs.shape[0], 1))
-
-
-
+origin_data, predicted_stock_price = predictByTrainHistory(train_data)
 
 
 # For predict future n day 
