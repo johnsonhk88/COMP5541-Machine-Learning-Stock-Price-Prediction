@@ -297,12 +297,13 @@ resultLoss = []
 
 
 
-showAllStockInfo(RawStockList)
-showAllStockHead(RawStockList)
-showAllStockTail(RawStockList)
-showAllStockNullData(RawStockList)
+#showAllStockInfo(RawStockList)
+#showAllStockHead(RawStockList)
+#showAllStockTail(RawStockList)
+#showAllStockNullData(RawStockList)
 
 
+#calculate MA for each Stock
 for stockTempKey, stockTempValue in RawStockList.items(): 
     print("\n\rCalculate MA for Stock :", stockTempKey)
     calculateMA(stockTempValue)
@@ -314,51 +315,24 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("Low Data Size :", len(trainLowPrice))
     print("Average Data Size :", len(trainMidPrice))
 
-showAllStockInfo(RawStockList)
+#showAllStockInfo(RawStockList)
 
+#plotting each stock
 for stockTempKey, stockTempValue in RawStockList.items():
     print("\n\rPlot Price :", stockTempKey)
     plotPrice(stockTempValue, stockTempKey)
     plotVolume(stockTempValue, stockTempKey)
     plotDailyChange(stockTempValue, stockTempKey)
 
-showAllStockInfo(PreTrainStockList)
-showAllStockHead(PreTrainStockList)
-showAllStockTail(PreTrainStockList)
+#showAllStockInfo(PreTrainStockList)
+#showAllStockHead(PreTrainStockList)
+#showAllStockTail(PreTrainStockList)
 
-print("print Raw Stock1 :", RawStockList[RawStock1Key])
-print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
+#print("print Raw Stock1 :", RawStockList[RawStock1Key])
+#print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
 
 #augFeatures(RawStockList[RawStock1Key])
-showStockInfo(RawStockList[RawStock1Key])
-
-
-#Splitting data into training set and a test set 
-TestStockKey = RawStock1Key
-TestColumn = AdjCloseIndex
-TestStock = RawStockList[TestStockKey]
-
-
-num_data = TestStock.shape[0]
-print("Number of data size of stock1 : ", num_data)
-num_train = ((int)(train_split * num_data))
-#num_train = ((int)(num_data-train_split ))
-print("Number of train data of stock1 : ", num_train)
-
-
-#Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
-print('RawStock1', TestStock[TestColumn].shape)
-rawStockData =TestStock[TestColumn].values.reshape(-1,1)
-#print(type(rawStockData))
-
-scaledData , trainScalar = ScaleColumnData(rawStockData, -1, 1, True)
-#print('Scaled Data:', scaledData)
-#split data 
-train_data = scaledData[: num_train] 
-test_data =  scaledData[num_train:]
-print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
-print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
-
+#showStockInfo(RawStockList[RawStock1Key])
 
 # Globals
 
@@ -373,29 +347,58 @@ TestPredictDay = 7
 
 learning_rate = 0.0005# 0.001
 #num_epochs = 250
-num_epochs = 250
+num_epochs = 50#250
 
-# Creating a data structure with 60 timesteps and 1 output
-# x_train for input sequence
-# y_train for target sequence
-X_train = []
-y_train = []
-hidden_state = None
-for i in range(INPUT_SIZE, train_data.shape[0]):
-    X_train.append(train_data[i-INPUT_SIZE:i, 0])
-    #y_train.append(train_data[i, 0])
-    y_train.append(train_data[i, 0])
-X_train, y_train = np.array(X_train), np.array(y_train)
-print("X_Train shape: ", X_train.shape)
-print("Y_Train shape: ", y_train.shape)#print(X_train)
-#y_train.reshape(y_train.shape[0], 2)
-#y_train.reshape(((int)(y_train.shape[0]/OUTPUT_SIZE)), OUTPUT_SIZE)
-print("Y_Train shape: ", y_train.shape)
-#print(y_train)
+def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
+    #Splitting data into training set and a test set 
+    #TestStockKey = RawStock1Key
+    #TestColumn = AdjCloseIndex
+    #TestStock = RawStockList[TestStockKey]
+    TestStock = TestDict[TestStockKey]
 
-# Reshaping 3 dimension data
-X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
-print("X_train Shape after reshape: ", X_train.shape)
+    num_data = TestStock.shape[0]
+    print("Number of data size of Test Stock : ", num_data)
+    num_train = ((int)(train_split * num_data))
+    #num_train = ((int)(num_data-train_split ))
+    print("Number of train data of stock1 : ", num_train)
+
+
+    #Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
+    print('RawStock1', TestStock[TestColumn].shape)
+    rawStockData =TestStock[TestColumn].values.reshape(-1,1)
+    #print(type(rawStockData))
+
+    scaledData , trainScalar = ScaleColumnData(rawStockData, -1, 1, True)
+    #print('Scaled Data:', scaledData)
+    #split data 
+    train_data = scaledData[: num_train] 
+    test_data =  scaledData[num_train:]
+    print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
+    print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
+
+    # Creating a data structure with 60 timesteps and 1 output
+    # x_train for input sequence
+    # y_train for target sequence
+    X_train = []
+    y_train = []
+    hidden_state = None
+    for i in range(INPUT_SIZE, train_data.shape[0]):
+        X_train.append(train_data[i-INPUT_SIZE:i, 0])
+        #y_train.append(train_data[i, 0])
+        y_train.append(train_data[i, 0])
+    X_train, y_train = np.array(X_train), np.array(y_train)
+    print("X_Train shape: ", X_train.shape)
+    print("Y_Train shape: ", y_train.shape)#print(X_train)
+    #y_train.reshape(y_train.shape[0], 2)
+    #y_train.reshape(((int)(y_train.shape[0]/OUTPUT_SIZE)), OUTPUT_SIZE)
+    print("Y_Train shape: ", y_train.shape)
+    #print(y_train)
+
+    # Reshaping 3 dimension data
+    X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
+    print("X_train Shape after reshape: ", X_train.shape)
+
+    return  X_train, y_train, train_data, test_data, TestStock, trainScalar ,hidden_state
 
 class LSTMModel(nn.Module):
     def __init__(self, i_size, h_size, n_layers, o_size):
@@ -420,7 +423,7 @@ class LSTMModel(nn.Module):
 
 
     
-def LTSMStockTrain(hidden_state, model):
+def LTSMStockTrain(X_train, y_train, hidden_state, model):
     print(y_train.shape)
     hiddenState = hidden_state
     for epoch in range(num_epochs):
@@ -441,6 +444,9 @@ def LTSMStockTrain(hidden_state, model):
         resultEpoch.append(epoch)
         resultLoss.append(loss.item())
 
+X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(RawStockList,
+                                                                                                   RawStock1Key, 
+                                                                                                   AdjCloseIndex) 
 
 model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
 
@@ -452,7 +458,7 @@ criterion = nn.MSELoss()
 
 hidden_state = None
 StartTrainTime = datetime.datetime.now()
-LTSMStockTrain(hidden_state, model)
+LTSMStockTrain(X_train, y_train, hidden_state, model)
 
 #save model
 torch.save(model, 'trained.pkl')
@@ -622,6 +628,7 @@ if torch.cuda.is_available() and EnableGPU:
 else:
     print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
     print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
+
 
 
 
