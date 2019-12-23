@@ -634,12 +634,40 @@ PredictStock7Out, resultStock7Epoch, resultStock7Loss = runTrainPredict(RawStock
 PredictStock8Out, resultStock8Epoch, resultStock8Loss = runTrainPredict(RawStockList, RawStock8Key, AdjCloseIndex, 'trained8.pkl')
 
 
+#Plot Sumary all MSE 
+plt.figure(figsize=(12,8))
+plt.plot(resultStock1Epoch, resultStock1Loss, label = 'Stock1')
+plt.plot(resultStock2Epoch, resultStock2Loss, label = 'Stock2')
+plt.plot(resultStock3Epoch, resultStock3Loss, label = 'Stock3')
+plt.plot(resultStock4Epoch, resultStock4Loss, label = 'Stock4')
+plt.plot(resultStock5Epoch, resultStock5Loss, label = 'Stock5')
+plt.plot(resultStock6Epoch, resultStock6Loss, label = 'Stock6')
+plt.plot(resultStock7Epoch, resultStock7Loss, label = 'Stock7')
+plt.plot(resultStock8Epoch, resultStock8Loss, label = 'Stock8')
+plt.xlabel('Step (Training)')
+plt.ylabel('Loss (%)')
+plt.title('Loss Vs Number of Step')
+plt.legend(loc='best')
+plt.show()
 
-
-
-
-
-
+#Plot Sumary all of PreictStock
+plt.figure(figsize= (12,8))
+plt.plot(PredictStock1Out[1:], label = 'Stock1')
+plt.plot(PredictStock2Out[1:], label = 'Stock2')
+plt.plot(PredictStock3Out[1:], label = 'Stock3')
+plt.plot(PredictStock4Out[1:], label = 'Stock4')
+plt.plot(PredictStock5Out[1:], label = 'Stock5')
+plt.plot(PredictStock6Out[1:], label = 'Stock6')
+plt.plot(PredictStock7Out[1:], label = 'Stock7')
+plt.plot(PredictStock8Out[1:], label = 'Stock8')
+#plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
+plt.xlabel('Next Time (days)')
+plt.ylabel('Predict Price')
+#plt.yticks(np.arange(0, max(predictOut), 20)) 
+plt.xticks(range(0, TestPredictDay),predictFutureDate ) 
+plt.title('Predict N Future Days Price')
+plt.legend(loc='best')
+plt.show()
 
 
 
