@@ -374,6 +374,12 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #showStockHead(TestStock)
     #print(TestStock)
     #showStockTail(TestStock)
+    print("checking if any null values are present\n", TestStock.isna().sum())
+    # Drop missing value
+    #TestStock.fillna(value=-99999, inplace=True)
+        #TestStock = TestStock.dropna()
+        #TestStock = TestStock.reset_index(drop=True)
+    TestStock.fillna(method='ffill', inplace=True) # forward fill miss value
     num_data = TestStock.shape[0]
     print("Number of data size of Test Stock : ", num_data)
     num_train = ((int)(train_split * num_data))
@@ -674,7 +680,6 @@ plt.xticks(range(0, TestPredictDay),predictFutureDate )
 plt.title('Predict N Future Days Price')
 plt.legend(loc='best')
 plt.show()
-
 
 
 
