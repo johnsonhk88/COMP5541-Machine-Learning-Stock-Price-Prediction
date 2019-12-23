@@ -423,7 +423,7 @@ class LSTMModel(nn.Module):
 
 
     
-def LTSMStockTrain(X_train, y_train, hidden_state, model):
+def LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser):
     print(y_train.shape)
     hiddenState = hidden_state
     for epoch in range(num_epochs):
@@ -444,7 +444,7 @@ def LTSMStockTrain(X_train, y_train, hidden_state, model):
         resultEpoch.append(epoch)
         resultLoss.append(loss.item())
         
-def predictByTrainHistory(train_data):
+def predictByTrainHistory(X_train, train_data, test_data, trainScalar):
     #recovery origin train test data 
     print('train data shape :', train_data.shape, type(train_data))
     print('test data shape :', test_data.shape, type(test_data))
@@ -496,93 +496,112 @@ def predictByTrainHistory(train_data):
     
     return origin_data , predicted_stock_price
 
-X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(RawStockList,
-                                                                                                   RawStock1Key, 
-                                                                                                   AdjCloseIndex) 
-
-model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
-
-if torch.cuda.is_available() and EnableGPU:
-    model.cuda()
-optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
- # loss function
-criterion = nn.MSELoss() 
-
-hidden_state = None
-StartTrainTime = datetime.datetime.now()
-LTSMStockTrain(X_train, y_train, hidden_state, model)
-
-#save model
-torch.save(model, 'trained.pkl')
-StopTrainTime = datetime.datetime.now()- StartTrainTime
-
-StartTestTime = datetime.datetime.now()
-origin_data, predicted_stock_price = predictByTrainHistory(train_data)
-
-
 # For predict future n day 
- 
-PrePredictOut =[]
-hidden_state = None
-for day in range (0, TestPredictDay + 1):
-    print('Predict Day : ', day)
-    if day != 0:
-        previousInputs= origin_data[-INPUT_SIZE -1  :] # get last 61 days result 
-        #previousInputs[-1] = PrePredictOut[-1]
-        previousInputs = np.concatenate((previousInputs, PrePredictOut),axis=0) # add Predict n day out 
-        print('New Previous Input shape', previousInputs)
-    else:
-        previousInputs= origin_data[-INPUT_SIZE -1+day :] 
-    
-    previousInputs = previousInputs.reshape(-1, 1)
-    previousInputs = trainScalar.transform(previousInputs)
-    print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
-    TestData = []   
-    if day != 0:
-        for i in range(INPUT_SIZE, INPUT_SIZE+2):
-            TestData.append(previousInputs[i-INPUT_SIZE+day: i +day, 0]) # shift day to 
-    else:    
-        for i in range(INPUT_SIZE, INPUT_SIZE+2):
-            TestData.append(previousInputs[i-INPUT_SIZE:i, 0])
+def predictFuturePrice(trainScalar, origin_data):
+    PrePredictOut =[]
+    hidden_state = None
+    for day in range (0, TestPredictDay + 1):
+        print('Predict Day : ', day)
+        if day != 0:
+            previousInputs= origin_data[-INPUT_SIZE -1  :] # get last 61 days result 
+            #previousInputs[-1] = PrePredictOut[-1]
+            previousInputs = np.concatenate((previousInputs, PrePredictOut),axis=0) # add Predict n day out 
+            print('New Previous Input shape', previousInputs)
+        else:
+            previousInputs= origin_data[-INPUT_SIZE -1+day :] 
 
-    TestData = np.array(TestData)
-    print('TestData input shape :', TestData.shape, type(TestData))
-    TestData = np.reshape(TestData, (TestData.shape[0], 1, TestData.shape[1]))
-    print('TestData input after reshape :', TestData.shape, type(TestData))
+        previousInputs = previousInputs.reshape(-1, 1)
+        previousInputs = trainScalar.transform(previousInputs)
+        print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
+        TestData = []   
+        if day != 0:
+            for i in range(INPUT_SIZE, INPUT_SIZE+2):
+                TestData.append(previousInputs[i-INPUT_SIZE+day: i +day, 0]) # shift day to 
+        else:    
+            for i in range(INPUT_SIZE, INPUT_SIZE+2):
+                TestData.append(previousInputs[i-INPUT_SIZE:i, 0])
 
-    
-    #load model
-    model2 = torch.load('trained.pkl')
+        TestData = np.array(TestData)
+        print('TestData input shape :', TestData.shape, type(TestData))
+        TestData = np.reshape(TestData, (TestData.shape[0], 1, TestData.shape[1]))
+        print('TestData input after reshape :', TestData.shape, type(TestData))
+
+
+        #load model
+        model2 = torch.load('trained.pkl')
+        if torch.cuda.is_available() and EnableGPU:
+            predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
+            print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+            Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
+            print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
+            Npredicted_stock_price = np.reshape(Npredicted_stock_price.cpu().detach().numpy(), (predict_inputs.shape[0], 1))
+            print('N predict stock price', Npredicted_stock_price)
+            PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
+            #PrePredictOut.append(Npredicted_stock_price[-1:, 0])
+            PrePredictOut.append(PredictOutputValue[-1:, 0])
+            print('PrePredictOut :', PrePredictOut)
+        else:
+            predict_input = Variable(torch.from_numpy(TestData).float())
+            print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+            Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
+            Npredicted_stock_price = np.reshape(Npredicted_stock_price.detach().numpy(), (predict_input.shape[0], 1))
+            PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
+            PrePredictOut.append(PredictOutputValue[-1:, 0])
+            print('PrePredictOut :', PrePredictOut)
+
+
+        print('Predict Output Value after Scalar: ', PredictOutputValue)
+    return PrePredictOut
+
+
+
+def runTrainPredict(StockDict, StockKey, StockColumn):
+    X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(RawStockList,
+                                                                                                       RawStock1Key, 
+                                                                                                       AdjCloseIndex) 
+
+    model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
+
     if torch.cuda.is_available() and EnableGPU:
-        predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
-        print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
-        Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
-        print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
-        Npredicted_stock_price = np.reshape(Npredicted_stock_price.cpu().detach().numpy(), (predict_inputs.shape[0], 1))
-        print('N predict stock price', Npredicted_stock_price)
-        PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
-        #PrePredictOut.append(Npredicted_stock_price[-1:, 0])
-        PrePredictOut.append(PredictOutputValue[-1:, 0])
-        print('PrePredictOut :', PrePredictOut)
+        model.cuda()
+    optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
+     # loss function
+    criterion = nn.MSELoss() 
+
+    hidden_state = None
+    StartTrainTime = datetime.datetime.now()
+    LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser)
+
+    #save model
+    torch.save(model, 'trained.pkl')
+    StopTrainTime = datetime.datetime.now()- StartTrainTime
+
+    StartTestTime = datetime.datetime.now()
+    origin_data, predicted_stock_price = predictByTrainHistory(X_train, train_data, test_data, trainScalar)
+
+    PrePredictOut = predictFuturePrice(trainScalar, origin_data)
+
+    #invert scale to predict price
+    predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
+    StopTestTime = datetime.datetime.now()- StartTestTime
+    print('Predicted stock price shape:', predicted_stock_price.shape)
+
+    real_stock_price_all = origin_data[INPUT_SIZE:]#np.concatenate((training_set[INPUT_SIZE:], real_stock_price))
+    
+    if torch.cuda.is_available() and EnableGPU:
+        print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
+        print("(GPU) Test Time :", StopTestTime.total_seconds() , "s")
+        torch.cuda.empty_cache() 
     else:
-        predict_input = Variable(torch.from_numpy(TestData).float())
-        print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
-        Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
-        Npredicted_stock_price = np.reshape(Npredicted_stock_price.detach().numpy(), (predict_input.shape[0], 1))
+        print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
+        print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
 
 
-    PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
-    print('Predict Output Value after Scalar: ', PredictOutputValue)
+    return origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock
 
-
-
-#invert scale to predict price
-predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
-StopTestTime = datetime.datetime.now()- StartTestTime
-print('Predicted stock price shape:', predicted_stock_price.shape)
-
-real_stock_price_all = origin_data[INPUT_SIZE:]#np.concatenate((training_set[INPUT_SIZE:], real_stock_price))
-
+origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock = runTrainPredict(RawStockList,
+                                                                                                     RawStock1Key, 
+                                                                                                     AdjCloseIndex)
 
 plt.figure(figsize=(12,8))
 plt.plot(resultEpoch, resultLoss)
@@ -623,13 +642,6 @@ plt.legend()
 plt.show()
 
 
-if torch.cuda.is_available() and EnableGPU:
-     print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
-     print("(GPU) Test Time :", StopTestTime.total_seconds() , "s")
-     torch.cuda.empty_cache() 
-else:
-    print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
-    print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
 
 
 
