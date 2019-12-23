@@ -365,7 +365,7 @@ TestPredictDay = 7
 
 learning_rate = 0.0005# 0.001
 #num_epochs = 250
-num_epochs = 50#250
+num_epochs = 100#250
 
 def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #Splitting data into training set and a test set 
