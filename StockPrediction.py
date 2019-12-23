@@ -119,7 +119,7 @@ trainStock1 = pd.read_csv(PreTrainStock1, header=None, delimiter='\t',
 
 #load Raw Data 
 rawStock1 = pd.read_csv(RawStock1, index_col="Date", parse_dates=True) 
-rawStock2 = pd.read_csv(RawStock2, index_col="Date", parse_dates=True) 
+rawStock2 = pd.read_csv(RawStock2, index_col="Date", parse_dates=True)
 rawStock3 = pd.read_csv(RawStock3, index_col="Date", parse_dates=True) 
 rawStock4 = pd.read_csv(RawStock4, index_col="Date", parse_dates=True) 
 rawStock5 = pd.read_csv(RawStock5, index_col="Date", parse_dates=True) 
@@ -262,14 +262,14 @@ def showAllStockNullData(StockList):
 
 def plotPrice(Stock , name):
     plt.figure(figsize= (20, 10))
-    plt.plot(range(Stock.shape[0]),(Stock['Low']+Stock['High'])/2.0, label='Average Price')
+    #plt.plot(range(Stock.shape[0]),(Stock['Low']+Stock['High'])/2.0, label='Average Price')
     plt.plot(range(Stock.shape[0]),(Stock['Adj Close']), label='Adj')
-    plt.plot(range(Stock.shape[0]),(Stock['Open']), label='Open')
-    plt.plot(range(Stock.shape[0]),(Stock['Close']), label='Close')
+    #plt.plot(range(Stock.shape[0]),(Stock['Open']), label='Open')
+    #plt.plot(range(Stock.shape[0]),(Stock['Close']), label='Close')
     plt.xticks(range(0,Stock.shape[0],50),Stock.index[::50], rotation=45)
     plt.title('Stock %s : Price' %name)
     plt.xlabel('Date',fontsize=18)
-    plt.ylabel('Mid Price',fontsize=18)
+    plt.ylabel('Adj Close Price',fontsize=18)
     plt.legend(loc='best')
     plt.show()
     
@@ -328,7 +328,7 @@ def plotPredictFuturePrice(predictOut):
 # start main program
 
 
-
+'''
 
 #calculate MA for each Stock
 for stockTempKey, stockTempValue in RawStockList.items(): 
@@ -341,7 +341,7 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("High Data Size :", len(trainHigPrices))
     print("Low Data Size :", len(trainLowPrice))
     print("Average Data Size :", len(trainMidPrice))
-
+'''
 
 
 #plotting each stock
@@ -349,7 +349,7 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("\n\rPlot Price :", stockTempKey)
     plotPrice(stockTempValue, stockTempKey)
     plotVolume(stockTempValue, stockTempKey)
-    plotDailyChange(stockTempValue, stockTempKey)
+    #plotDailyChange(stockTempValue, stockTempKey)
 
 
 # Globals
@@ -371,7 +371,9 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #Splitting data into training set and a test set 
     TestStock = None
     TestStock = TestDict[TestStockKey]
-
+    #showStockHead(TestStock)
+    #print(TestStock)
+    #showStockTail(TestStock)
     num_data = TestStock.shape[0]
     print("Number of data size of Test Stock : ", num_data)
     num_train = ((int)(train_split * num_data))
@@ -574,6 +576,7 @@ def predictFuturePrice(trainScalar, origin_data, fileName):
 
 
 def runTrainPredict(StockDict, StockKey, StockColumn, fileName):
+    print('Stock :', StockKey)
     resultEpoch = []
     resultLoss = []    
     X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(StockDict,
@@ -608,14 +611,17 @@ def runTrainPredict(StockDict, StockKey, StockColumn, fileName):
     real_stock_price_all = origin_data[INPUT_SIZE:]#np.concatenate((training_set[INPUT_SIZE:], real_stock_price))
     
     if torch.cuda.is_available() and EnableGPU:
+        print('Stock :', StockKey)
         print("\n\r(GPU) Train Time : ", StopTrainTime.total_seconds(), "s")
         print("(GPU) Test Time :", StopTestTime.total_seconds() , "s")
         torch.cuda.empty_cache() 
     else:
+        print('Stock :', StockKey)
         print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
         print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
     
-    #plot Result     
+    #plot Result
+    print('Stock :', StockKey)
     plotLossResult(resultEpoch, resultLoss)
     plotPredictByHistory(real_stock_price_all, predicted_stock_price, TestStock)
     plotPredictFuturePrice(PrePredictOut)
