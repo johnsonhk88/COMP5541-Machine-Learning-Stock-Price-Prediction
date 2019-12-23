@@ -290,17 +290,45 @@ def plotDailyChange(Stock , name):
     Stock['Daily Return'].plot(figsize=(20,10), legend=True,linestyle='--',marker='o')
     plt.show()
 
+def plotLossResult(Epoch, Loss):
+    plt.figure(figsize=(12,8))
+    plt.plot(Epoch, Loss)
+    plt.xlabel('Step (Training)')
+    plt.ylabel('Loss (%)')
+    plt.title('Loss Vs Number of Step')
+    plt.show()
+
+def plotPredictByHistory(realPrice, predictPrice, TestStock):
+    plt.figure(figsize= (12,8))
+    plt.plot(realPrice, color = 'blue' ,label = 'Real Price')
+    plt.plot(predictPrice, color = 'red' ,label = 'Predict Price')
+    plt.xticks(range(0, TestStock.shape[0],50),TestStock.index[60::50], rotation=45)
+    plt.xlabel('Date Time')
+    plt.ylabel('Price')
+    plt.title('Predict Whole Price Result')
+    plt.legend()
+    plt.show()
+
+def plotPredictFuturePrice(PrePredictOut):
+    plt.figure(figsize= (12,8))
+    #plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
+    #plt.plot(real_stock_price_all[-INPUT_SIZE:], color = 'blue' ,label = 'Real Price')
+    plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
+    #plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
+    plt.xlabel('Next Time (days)')
+    plt.ylabel('Predict Price')
+    plt.yticks(np.arange(0, max(PrePredictOut)*1.3, 20)) 
+    plt.xticks(range(0, TestPredictDay),predictFutureDate ) 
+    plt.title('Predict N Day Result Zoom ')
+    plt.legend()
+    plt.show()
+
+
 
 # start main program
 resultEpoch = []
 resultLoss = []    
 
-
-
-#showAllStockInfo(RawStockList)
-#showAllStockHead(RawStockList)
-#showAllStockTail(RawStockList)
-#showAllStockNullData(RawStockList)
 
 
 #calculate MA for each Stock
@@ -315,7 +343,7 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("Low Data Size :", len(trainLowPrice))
     print("Average Data Size :", len(trainMidPrice))
 
-#showAllStockInfo(RawStockList)
+
 
 #plotting each stock
 for stockTempKey, stockTempValue in RawStockList.items():
@@ -324,15 +352,6 @@ for stockTempKey, stockTempValue in RawStockList.items():
     plotVolume(stockTempValue, stockTempKey)
     plotDailyChange(stockTempValue, stockTempKey)
 
-#showAllStockInfo(PreTrainStockList)
-#showAllStockHead(PreTrainStockList)
-#showAllStockTail(PreTrainStockList)
-
-#print("print Raw Stock1 :", RawStockList[RawStock1Key])
-#print("print Raw Stock1 index column:", RawStockList[RawStock1Key].iloc[:,0])
-
-#augFeatures(RawStockList[RawStock1Key])
-#showStockInfo(RawStockList[RawStock1Key])
 
 # Globals
 
@@ -595,51 +614,26 @@ def runTrainPredict(StockDict, StockKey, StockColumn):
     else:
         print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
         print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
+    
+    #    
+    plotLossResult(resultEpoch, resultLoss)
+    plotPredictByHistory(real_stock_price_all, predicted_stock_price, TestStock )
+    plotPredictFuturePrice(PrePredictOut)
 
 
-    return origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock
+    #return origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock
 
-origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock = runTrainPredict(RawStockList,
-                                                                                                     RawStock1Key, 
-                                                                                                     AdjCloseIndex)
-
-plt.figure(figsize=(12,8))
-plt.plot(resultEpoch, resultLoss)
-plt.xlabel('Step (Training)')
-plt.ylabel('Loss (%)')
-plt.title('Loss Vs Number of Step')
-plt.show()
-
-
-
-print('origin data shape :', origin_data.shape)
-plt.figure(figsize= (12,8))
-#plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
-plt.plot(real_stock_price_all, color = 'blue' ,label = 'Real Price')
-plt.plot(predicted_stock_price, color = 'red' ,label = 'Predict Price')
-plt.xticks(range(0, TestStock.shape[0],50),TestStock.index[60::50], rotation=45)
-plt.xlabel('Date Time')
-plt.ylabel('Price')
-plt.title('Predict Whole Price Result')
-plt.legend()
-plt.show()
+#Main run for 8 stocks
+runTrainPredict(RawStockList, RawStock1Key, AdjCloseIndex)
 
 
 
 
 
-plt.figure(figsize= (12,8))
-#plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
-#plt.plot(real_stock_price_all[-INPUT_SIZE:], color = 'blue' ,label = 'Real Price')
-plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
-#plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
-plt.xlabel('Next Time (days)')
-plt.ylabel('Predict Price')
-plt.yticks(np.arange(0, max(PrePredictOut)*1.3, 20)) 
-plt.xticks(range(0, TestPredictDay),predictFutureDate ) 
-plt.title('Predict N Day Result Zoom ')
-plt.legend()
-plt.show()
+
+
+
+
 
 
 
