@@ -298,26 +298,26 @@ def plotLossResult(Epoch, Loss):
     plt.title('Loss Vs Number of Step')
     plt.show()
 
-def plotPredictByHistory(realPrice, predictPrice, TestStock):
+def plotPredictByHistory(realPrice, predictPrice, Stock):
     plt.figure(figsize= (12,8))
     plt.plot(realPrice, color = 'blue' ,label = 'Real Price')
     plt.plot(predictPrice, color = 'red' ,label = 'Predict Price')
-    plt.xticks(range(0, TestStock.shape[0],50),TestStock.index[60::50], rotation=45)
+    plt.xticks(range(0, Stock.shape[0],50), Stock.index[60::50], rotation=45)
     plt.xlabel('Date Time')
     plt.ylabel('Price')
     plt.title('Predict Whole Price Result')
     plt.legend()
     plt.show()
 
-def plotPredictFuturePrice(PrePredictOut):
+def plotPredictFuturePrice(predictOut):
     plt.figure(figsize= (12,8))
     #plt.plot(origin_data, color = 'blue' ,label = 'Origin Price')
     #plt.plot(real_stock_price_all[-INPUT_SIZE:], color = 'blue' ,label = 'Real Price')
-    plt.plot(PrePredictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
+    plt.plot(predictOut[1:], color = 'red' ,label = 'Predict N Future Days Price')
     #plt.xticks(range(0, TestStock.shape[0],20),TestStock.index[750+60::20], rotation=45)
     plt.xlabel('Next Time (days)')
     plt.ylabel('Predict Price')
-    plt.yticks(np.arange(0, max(PrePredictOut)*1.3, 20)) 
+    #plt.yticks(np.arange(0, max(predictOut), 20)) 
     plt.xticks(range(0, TestPredictDay),predictFutureDate ) 
     plt.title('Predict N Day Result Zoom ')
     plt.legend()
@@ -326,8 +326,7 @@ def plotPredictFuturePrice(PrePredictOut):
 
 
 # start main program
-resultEpoch = []
-resultLoss = []    
+
 
 
 
@@ -370,9 +369,7 @@ num_epochs = 50#250
 
 def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #Splitting data into training set and a test set 
-    #TestStockKey = RawStock1Key
-    #TestColumn = AdjCloseIndex
-    #TestStock = RawStockList[TestStockKey]
+    TestStock = None
     TestStock = TestDict[TestStockKey]
 
     num_data = TestStock.shape[0]
@@ -383,13 +380,15 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
 
 
     #Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
-    print('RawStock1', TestStock[TestColumn].shape)
+    print('RawStock', TestStock[TestColumn].shape)
     rawStockData =TestStock[TestColumn].values.reshape(-1,1)
     #print(type(rawStockData))
 
     scaledData , trainScalar = ScaleColumnData(rawStockData, -1, 1, True)
     #print('Scaled Data:', scaledData)
     #split data 
+    train_data = None
+    test_data = None
     train_data = scaledData[: num_train] 
     test_data =  scaledData[num_train:]
     print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
@@ -442,7 +441,7 @@ class LSTMModel(nn.Module):
 
 
     
-def LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser):
+def LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser, Epoch, Loss):
     print(y_train.shape)
     hiddenState = hidden_state
     for epoch in range(num_epochs):
@@ -460,10 +459,11 @@ def LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser):
         optimiser.step()                                     # update the parameters
         if epoch % 5 == 0:
             print('epoch {}, loss {}'.format(epoch,loss.item()))
-        resultEpoch.append(epoch)
-        resultLoss.append(loss.item())
+        Epoch.append(epoch)
+        Loss.append(loss.item())
         
-def predictByTrainHistory(X_train, train_data, test_data, trainScalar):
+def predictByTrainHistory(X_train, train_data, test_data, trainScalar, fileName):
+    X_test = []
     #recovery origin train test data 
     print('train data shape :', train_data.shape, type(train_data))
     print('test data shape :', test_data.shape, type(test_data))
@@ -479,7 +479,6 @@ def predictByTrainHistory(X_train, train_data, test_data, trainScalar):
     print('test input shape from origin data :', testInputs.shape, type(testInputs))
 
     #MaxTestRange = origin_data.shape[0]
-    X_test = []
     for i in range(INPUT_SIZE, MaxTestRange):
         X_test.append(testInputs[i-INPUT_SIZE:i, 0])
     X_test = np.array(X_test)
@@ -500,7 +499,7 @@ def predictByTrainHistory(X_train, train_data, test_data, trainScalar):
 
     hidden_state = None
     #load model
-    model2 = torch.load('trained.pkl')
+    model2 = torch.load(fileName)
     if torch.cuda.is_available() and EnableGPU:
         test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
         print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
@@ -516,7 +515,7 @@ def predictByTrainHistory(X_train, train_data, test_data, trainScalar):
     return origin_data , predicted_stock_price
 
 # For predict future n day 
-def predictFuturePrice(trainScalar, origin_data):
+def predictFuturePrice(trainScalar, origin_data, fileName):
     PrePredictOut =[]
     hidden_state = None
     for day in range (0, TestPredictDay + 1):
@@ -525,7 +524,7 @@ def predictFuturePrice(trainScalar, origin_data):
             previousInputs= origin_data[-INPUT_SIZE -1  :] # get last 61 days result 
             #previousInputs[-1] = PrePredictOut[-1]
             previousInputs = np.concatenate((previousInputs, PrePredictOut),axis=0) # add Predict n day out 
-            print('New Previous Input shape', previousInputs)
+            #print('New Previous Input shape', previousInputs)
         else:
             previousInputs= origin_data[-INPUT_SIZE -1+day :] 
 
@@ -547,7 +546,7 @@ def predictFuturePrice(trainScalar, origin_data):
 
 
         #load model
-        model2 = torch.load('trained.pkl')
+        model2 = torch.load(fileName)
         if torch.cuda.is_available() and EnableGPU:
             predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
             print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
@@ -574,11 +573,12 @@ def predictFuturePrice(trainScalar, origin_data):
 
 
 
-def runTrainPredict(StockDict, StockKey, StockColumn):
-    X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(RawStockList,
-                                                                                                       RawStock1Key, 
-                                                                                                       AdjCloseIndex) 
-
+def runTrainPredict(StockDict, StockKey, StockColumn, fileName):
+    resultEpoch = []
+    resultLoss = []    
+    X_train, y_train, train_data, test_data, TestStock, trainScalar, hidden_state =  TrainStockPrepare(StockDict,
+                                                                                                       StockKey, 
+                                                                                                       StockColumn) 
     model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
 
     if torch.cuda.is_available() and EnableGPU:
@@ -589,16 +589,16 @@ def runTrainPredict(StockDict, StockKey, StockColumn):
 
     hidden_state = None
     StartTrainTime = datetime.datetime.now()
-    LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser)
+    LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser,resultEpoch, resultLoss)
 
     #save model
-    torch.save(model, 'trained.pkl')
+    torch.save(model, fileName)
     StopTrainTime = datetime.datetime.now()- StartTrainTime
 
     StartTestTime = datetime.datetime.now()
-    origin_data, predicted_stock_price = predictByTrainHistory(X_train, train_data, test_data, trainScalar)
+    origin_data, predicted_stock_price = predictByTrainHistory(X_train, train_data, test_data, trainScalar, fileName)
 
-    PrePredictOut = predictFuturePrice(trainScalar, origin_data)
+    PrePredictOut = predictFuturePrice(trainScalar, origin_data, fileName)
 
     #invert scale to predict price
     predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
@@ -615,17 +615,23 @@ def runTrainPredict(StockDict, StockKey, StockColumn):
         print("\n\r(CPU) Train Time : ", StopTrainTime.total_seconds(), "s")
         print("(CPU) Test Time :", StopTestTime.total_seconds() , "s")
     
-    #    
+    #plot Result     
     plotLossResult(resultEpoch, resultLoss)
-    plotPredictByHistory(real_stock_price_all, predicted_stock_price, TestStock )
+    plotPredictByHistory(real_stock_price_all, predicted_stock_price, TestStock)
     plotPredictFuturePrice(PrePredictOut)
 
-
+    return PrePredictOut, resultEpoch, resultLoss
     #return origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock
 
 #Main run for 8 stocks
-runTrainPredict(RawStockList, RawStock1Key, AdjCloseIndex)
-
+PredictStock1Out, resultStock1Epoch, resultStock1Loss = runTrainPredict(RawStockList, RawStock1Key, AdjCloseIndex, 'trained1.pkl')
+PredictStock2Out, resultStock2Epoch, resultStock2Loss = runTrainPredict(RawStockList, RawStock2Key, AdjCloseIndex, 'trained2.pkl')
+PredictStock3Out, resultStock3Epoch, resultStock3Loss = runTrainPredict(RawStockList, RawStock3Key, AdjCloseIndex, 'trained3.pkl')
+PredictStock4Out, resultStock4Epoch, resultStock4Loss = runTrainPredict(RawStockList, RawStock4Key, AdjCloseIndex, 'trained4.pkl')
+PredictStock5Out, resultStock5Epoch, resultStock5Loss = runTrainPredict(RawStockList, RawStock5Key, AdjCloseIndex, 'trained5.pkl')
+PredictStock6Out, resultStock6Epoch, resultStock6Loss = runTrainPredict(RawStockList, RawStock6Key, AdjCloseIndex, 'trained6.pkl')
+PredictStock7Out, resultStock7Epoch, resultStock7Loss = runTrainPredict(RawStockList, RawStock7Key, AdjCloseIndex, 'trained7.pkl')
+PredictStock8Out, resultStock8Epoch, resultStock8Loss = runTrainPredict(RawStockList, RawStock8Key, AdjCloseIndex, 'trained8.pkl')
 
 
 
