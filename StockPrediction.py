@@ -26,12 +26,12 @@ import psutil
 
 EnableGPU =True
 
-train_split = 0.95 #0.99
+train_split = 0.8 #0.99
 
 # Globals
 
 INPUT_SIZE = 60 # this depend on 
-MaxTestRange = INPUT_SIZE + 6
+MaxTestRange = INPUT_SIZE + 2
 HIDDEN_SIZE = 100
 NUM_LAYERS = 3
 OUTPUT_SIZE = 1
@@ -41,8 +41,8 @@ TestPredictDay = 7
 
 learning_rate = 0.0005# 0.001
 #num_epochs = 250
-num_epochs = 200#250
-StartTrainDays = 560
+num_epochs = 60#250
+StartTrainDays = 0#200#400#300#560#720
 
 # CPU to GPU
 if torch.cuda.is_available() and EnableGPU:
@@ -377,7 +377,7 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #showStockHead(TestStock)
     #print(TestStock)
     #showStockTail(TestStock)
-    print("checking if any null values are present\n", TestStock.isna().sum())
+    #print("checking if any null values are present\n", TestStock.isna().sum())
     # Drop missing value
     #TestStock.fillna(value=-99999, inplace=True)
         #TestStock = TestStock.dropna()
@@ -385,16 +385,16 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     TestStock = TestStock.dropna() # drop nan data
     #TestStock.fillna(method='ffill', inplace=True) # forward fill miss value
     #TestStock = TestStock.reset_index(drop=True)
-    print("Number of data size Original Test Stock : ", TestStock.shape[0])
+    #print("Number of data size Original Test Stock : ", TestStock.shape[0])
     num_data = TestStock.shape[0]-StartTrainDays 
     print("Number of data size for Test Stock : ", num_data)
     num_train = ((int)(train_split * num_data))
     #num_train = ((int)(num_data-train_split ))
-    print("Number of train data of stock1 : ", num_train)
+    print("Number of train data of stock : ", num_train)
 
 
     #Data normalize scaler with reshape 1D data into 2D metrix data before feed LSTM model 
-    print('RawStock', TestStock[TestColumn].shape)
+    #print('RawStock', TestStock[TestColumn].shape)
     rawStockData =TestStock[TestColumn].values.reshape(-1,1)
     #print(type(rawStockData))
 
@@ -405,8 +405,8 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     test_data = None
     train_data = scaledData[StartTrainDays: num_train+ StartTrainDays] 
     test_data =  scaledData[num_train+ StartTrainDays:]
-    print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
-    print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
+    #print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
+    #print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
 
     # Creating a data structure with 60 timesteps and 1 output
     # x_train for input sequence
@@ -419,11 +419,9 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
         #y_train.append(train_data[i, 0])
         y_train.append(train_data[i, 0])
     X_train, y_train = np.array(X_train), np.array(y_train)
-    print("X_Train shape: ", X_train.shape)
-    print("Y_Train shape: ", y_train.shape)#print(X_train)
-    #y_train.reshape(y_train.shape[0], 2)
-    #y_train.reshape(((int)(y_train.shape[0]/OUTPUT_SIZE)), OUTPUT_SIZE)
-    print("Y_Train shape: ", y_train.shape)
+    #print("X_Train shape: ", X_train.shape)
+    #print("Y_Train shape: ", y_train.shape)#print(X_train)
+    #print("Y_Train shape: ", y_train.shape)
     #print(y_train)
 
     # Reshaping 3 dimension data
@@ -479,8 +477,8 @@ def LTSMStockTrain(X_train, y_train, hidden_state, model, criterion, optimiser, 
 def predictByTrainHistory(X_train, train_data, test_data, trainScalar, fileName):
     X_test = []
     #recovery origin train test data 
-    print('train data shape :', train_data.shape, type(train_data))
-    print('test data shape :', test_data.shape, type(test_data))
+    #print('train data shape :', train_data.shape, type(train_data))
+    #print('test data shape :', test_data.shape, type(test_data))
     origin_data = np.concatenate((train_data, test_data), axis=0)
     #inverse scaler
     origin_data = trainScalar.inverse_transform(origin_data)
@@ -502,7 +500,7 @@ def predictByTrainHistory(X_train, train_data, test_data, trainScalar, fileName)
     #print('Zero shape: ', Zero.shape )
 
     X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
-    print('X test shape :', X_test.shape, type(X_test))
+    #print('X test shape :', X_test.shape, type(X_test))
 
 
     #X_train + Xtest 
@@ -516,9 +514,9 @@ def predictByTrainHistory(X_train, train_data, test_data, trainScalar, fileName)
     model2 = torch.load(fileName)
     if torch.cuda.is_available() and EnableGPU:
         test_inputs = Variable(torch.from_numpy(X_train_X_test).float().cuda())
-        print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
+        #print('test input shape befor test model :', test_inputs.shape, type(test_inputs))
         predicted_stock_price , b = model2(test_inputs, hidden_state)
-        print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
+        #print('predict stock prince shape :', predicted_stock_price.shape, type(predicted_stock_price))
         predicted_stock_price = np.reshape(predicted_stock_price.cpu().detach().numpy(), (test_inputs.shape[0], 1))
     else:
         test_inputs = Variable(torch.from_numpy(X_train_X_test).float())
@@ -544,7 +542,7 @@ def predictFuturePrice(trainScalar, origin_data, fileName):
 
         previousInputs = previousInputs.reshape(-1, 1)
         previousInputs = trainScalar.transform(previousInputs)
-        print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
+        #print('Previous input shape from origin data :', previousInputs.shape, type(previousInputs))
         TestData = []   
         if day != 0:
             for i in range(INPUT_SIZE, INPUT_SIZE+2):
@@ -554,35 +552,35 @@ def predictFuturePrice(trainScalar, origin_data, fileName):
                 TestData.append(previousInputs[i-INPUT_SIZE:i, 0])
 
         TestData = np.array(TestData)
-        print('TestData input shape :', TestData.shape, type(TestData))
+       #print('TestData input shape :', TestData.shape, type(TestData))
         TestData = np.reshape(TestData, (TestData.shape[0], 1, TestData.shape[1]))
-        print('TestData input after reshape :', TestData.shape, type(TestData))
+        #print('TestData input after reshape :', TestData.shape, type(TestData))
 
 
         #load model
         model2 = torch.load(fileName)
         if torch.cuda.is_available() and EnableGPU:
             predict_inputs = Variable(torch.from_numpy(TestData).float().cuda())
-            print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+            #print('predict input shape befor test model :', predict_inputs.shape, type(predict_inputs))
             Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
-            print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
+            #print('predict stock Nprice shape :', Npredicted_stock_price.shape, type(Npredicted_stock_price))
             Npredicted_stock_price = np.reshape(Npredicted_stock_price.cpu().detach().numpy(), (predict_inputs.shape[0], 1))
-            print('N predict stock price', Npredicted_stock_price)
+            #print('N predict stock price', Npredicted_stock_price)
             PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
             #PrePredictOut.append(Npredicted_stock_price[-1:, 0])
             PrePredictOut.append(PredictOutputValue[-1:, 0])
-            print('PrePredictOut :', PrePredictOut)
+            #print('PrePredictOut :', PrePredictOut)
         else:
             predict_input = Variable(torch.from_numpy(TestData).float())
-            print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
+            #print('test input shape befor test model :', predict_inputs.shape, type(predict_inputs))
             Npredicted_stock_price , hidden_state = model2(predict_inputs, hidden_state)
             Npredicted_stock_price = np.reshape(Npredicted_stock_price.detach().numpy(), (predict_input.shape[0], 1))
             PredictOutputValue = trainScalar.inverse_transform(Npredicted_stock_price)
             PrePredictOut.append(PredictOutputValue[-1:, 0])
-            print('PrePredictOut :', PrePredictOut)
+            #print('PrePredictOut :', PrePredictOut)
 
 
-        print('Predict Output Value after Scalar: ', PredictOutputValue)
+        #print('Predict Output Value after Scalar: ', PredictOutputValue)
     return PrePredictOut
 
 
@@ -618,7 +616,7 @@ def runTrainPredict(StockDict, StockKey, StockColumn, fileName):
     #invert scale to predict price
     predicted_stock_price = trainScalar.inverse_transform(predicted_stock_price)
     StopTestTime = datetime.datetime.now()- StartTestTime
-    print('Predicted stock price shape:', predicted_stock_price.shape)
+    #print('Predicted stock price shape:', predicted_stock_price.shape)
 
     real_stock_price_all = origin_data[INPUT_SIZE:]#np.concatenate((training_set[INPUT_SIZE:], real_stock_price))
     
@@ -636,7 +634,7 @@ def runTrainPredict(StockDict, StockKey, StockColumn, fileName):
     print('Stock :', StockKey)
     plotLossResult(resultEpoch, resultLoss)
     plotPredictByHistory(real_stock_price_all, predicted_stock_price, TestStock)
-    plotPredictFuturePrice(PrePredictOut)
+    #plotPredictFuturePrice(PrePredictOut)
 
     return PrePredictOut, resultEpoch, resultLoss
     #return origin_data, real_stock_price_all, predicted_stock_price, PrePredictOut, TestStock
@@ -651,14 +649,14 @@ PredictStock6Out, resultStock6Epoch, resultStock6Loss = runTrainPredict(RawStock
 PredictStock7Out, resultStock7Epoch, resultStock7Loss = runTrainPredict(RawStockList, RawStock7Key, AdjCloseIndex, 'trained7.pkl')
 PredictStock8Out, resultStock8Epoch, resultStock8Loss = runTrainPredict(RawStockList, RawStock8Key, AdjCloseIndex, 'trained8.pkl')
 
-print('Stock1 predict result: ', PredictStock1Out)
-print('Stock2 predict result: ', PredictStock2Out)
-print('Stock3 predict result: ', PredictStock3Out)
-print('Stock4 predict result: ', PredictStock4Out)
-print('Stock5 predict result: ', PredictStock5Out)
-print('Stock6 predict result: ', PredictStock6Out)
-print('Stock7 predict result: ', PredictStock7Out)
-print('Stock8 predict result: ', PredictStock8Out)
+# print('Stock1 predict result: ', PredictStock1Out[1:])
+# print('Stock2 predict result: ', PredictStock2Out[1:])
+# print('Stock3 predict result: ', PredictStock3Out[1:])
+# print('Stock4 predict result: ', PredictStock4Out[1:])
+# print('Stock5 predict result: ', PredictStock5Out[1:])
+# print('Stock6 predict result: ', PredictStock6Out[1:])
+# print('Stock7 predict result: ', PredictStock7Out[1:])
+# print('Stock8 predict result: ', PredictStock8Out[1:])
 
 #Plot Sumary all MSE 
 plt.figure(figsize=(12,8))
