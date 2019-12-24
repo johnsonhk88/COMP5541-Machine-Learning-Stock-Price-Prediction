@@ -26,7 +26,23 @@ import psutil
 
 EnableGPU =True
 
-train_split = 0.8 #0.99
+train_split = 0.95 #0.99
+
+# Globals
+
+INPUT_SIZE = 60 # this depend on 
+MaxTestRange = INPUT_SIZE + 6
+HIDDEN_SIZE = 100
+NUM_LAYERS = 3
+OUTPUT_SIZE = 1
+TestPredictDay = 7
+
+# Hyper parameters
+
+learning_rate = 0.0005# 0.001
+#num_epochs = 250
+num_epochs = 200#250
+StartTrainDays = 560
 
 # CPU to GPU
 if torch.cuda.is_available() and EnableGPU:
@@ -302,7 +318,7 @@ def plotPredictByHistory(realPrice, predictPrice, Stock):
     plt.figure(figsize= (12,8))
     plt.plot(realPrice, color = 'blue' ,label = 'Real Price')
     plt.plot(predictPrice, color = 'red' ,label = 'Predict Price')
-    plt.xticks(range(0, Stock.shape[0],50), Stock.index[60::50], rotation=45)
+    plt.xticks(range(0, Stock.shape[0]-StartTrainDays,50), Stock.index[60+StartTrainDays::50], rotation=45)
     plt.xlabel('Date Time')
     plt.ylabel('Price')
     plt.title('Predict Whole Price Result')
@@ -343,29 +359,16 @@ for stockTempKey, stockTempValue in RawStockList.items():
     print("Average Data Size :", len(trainMidPrice))
 '''
 
-
+'''
 #plotting each stock
 for stockTempKey, stockTempValue in RawStockList.items():
     print("\n\rPlot Price :", stockTempKey)
     plotPrice(stockTempValue, stockTempKey)
     plotVolume(stockTempValue, stockTempKey)
     #plotDailyChange(stockTempValue, stockTempKey)
+'''
 
 
-# Globals
-
-INPUT_SIZE = 60 # this depend on 
-MaxTestRange = INPUT_SIZE + 6
-HIDDEN_SIZE = 100
-NUM_LAYERS = 3
-OUTPUT_SIZE = 1
-TestPredictDay = 7
-
-# Hyper parameters
-
-learning_rate = 0.0005# 0.001
-#num_epochs = 250
-num_epochs = 100#250
 
 def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #Splitting data into training set and a test set 
@@ -379,9 +382,12 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #TestStock.fillna(value=-99999, inplace=True)
         #TestStock = TestStock.dropna()
         #TestStock = TestStock.reset_index(drop=True)
-    TestStock.fillna(method='ffill', inplace=True) # forward fill miss value
-    num_data = TestStock.shape[0]
-    print("Number of data size of Test Stock : ", num_data)
+    TestStock = TestStock.dropna() # drop nan data
+    #TestStock.fillna(method='ffill', inplace=True) # forward fill miss value
+    #TestStock = TestStock.reset_index(drop=True)
+    print("Number of data size Original Test Stock : ", TestStock.shape[0])
+    num_data = TestStock.shape[0]-StartTrainDays 
+    print("Number of data size for Test Stock : ", num_data)
     num_train = ((int)(train_split * num_data))
     #num_train = ((int)(num_data-train_split ))
     print("Number of train data of stock1 : ", num_train)
@@ -397,8 +403,8 @@ def TrainStockPrepare(TestDict, TestStockKey, TestColumn):
     #split data 
     train_data = None
     test_data = None
-    train_data = scaledData[: num_train] 
-    test_data =  scaledData[num_train:]
+    train_data = scaledData[StartTrainDays: num_train+ StartTrainDays] 
+    test_data =  scaledData[num_train+ StartTrainDays:]
     print("Train data size :", train_data.shape[0] , 'Shape :',train_data.shape )
     print("Test data  size :", test_data.shape[0] , 'Shape :',test_data.shape)
 
@@ -645,6 +651,14 @@ PredictStock6Out, resultStock6Epoch, resultStock6Loss = runTrainPredict(RawStock
 PredictStock7Out, resultStock7Epoch, resultStock7Loss = runTrainPredict(RawStockList, RawStock7Key, AdjCloseIndex, 'trained7.pkl')
 PredictStock8Out, resultStock8Epoch, resultStock8Loss = runTrainPredict(RawStockList, RawStock8Key, AdjCloseIndex, 'trained8.pkl')
 
+print('Stock1 predict result: ', PredictStock1Out)
+print('Stock2 predict result: ', PredictStock2Out)
+print('Stock3 predict result: ', PredictStock3Out)
+print('Stock4 predict result: ', PredictStock4Out)
+print('Stock5 predict result: ', PredictStock5Out)
+print('Stock6 predict result: ', PredictStock6Out)
+print('Stock7 predict result: ', PredictStock7Out)
+print('Stock8 predict result: ', PredictStock8Out)
 
 #Plot Sumary all MSE 
 plt.figure(figsize=(12,8))
